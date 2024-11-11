@@ -3,7 +3,7 @@ defmodule MiniD3fl.JobController.EventQueueTest do
   doctest MiniD3fl.JobController.EventQueue
   alias MiniD3fl.JobController.EventQueue
 
-  test "greets the world" do
+  test "should pop from EventQueue with proper order" do
     # キューの初期化
     queue = EventQueue.init_queue()
 
