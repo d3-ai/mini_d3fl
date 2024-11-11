@@ -5,25 +5,30 @@ defmodule MiniD3fl.ComputeNodeTest do
   alias MiniD3fl.ComputeNode.InitArgs
   alias MiniD3fl.ComputeNode
 
-  test "should init with proper state" do
-    args = %InitArgs{node_id: nil,
+  setup do
+    node_id = 1
+    args = %InitArgs{node_id: node_id,
                       model: nil,
-                      data: nil}
+                      data: nil,
+                      availability: true
+                    }
 
-    {value, _pid}  = ComputeNode.start_link(args)
-    assert value == :ok
+    {:ok, _pid}  = ComputeNode.start_link(args)
+    %{node_id: node_id}
   end
 
-  test "should train with proper state" do
-    args = %InitArgs{node_id: 1,
-                      model: nil,
-                      data: nil}
 
-    {value, _pid}  = ComputeNode.start_link(args)
-    assert value == :ok
-
-    train_results = ComputeNode.train(%TrainArgs{node_id: 1})
+  test "should train with proper state", %{node_id: node_id} do
+    train_results = ComputeNode.train(%TrainArgs{node_id: node_id})
     assert train_results == :train_results
+  end
+
+  test "should tuggle availability", %{node_id: node_id} do
+    assert ComputeNode.is_available(node_id) == true
+    ComputeNode.become_unavailable(node_id)
+    assert ComputeNode.is_available(node_id) == false
+    ComputeNode.become_available(node_id)
+    assert ComputeNode.is_available(node_id) == true
   end
 
 end

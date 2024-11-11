@@ -14,14 +14,16 @@ defmodule MiniD3fl.ComputeNode do
               now_model: %Model{},
               future_model: %Model{},
               data: nil,
-              cn_id_channel_pid_dict: %{}
+              cn_id_channel_pid_dict: %{},
+              availability: nil
   end
 
   defmodule InitArgs do
     defstruct node_id: nil,
               model: %Model{},
               data: nil,
-              cn_id_channel_pid_dict: %{}
+              cn_id_channel_pid_dict: %{},
+              availability: nil
   end
 
   defmodule TrainArgs do
@@ -51,7 +53,8 @@ defmodule MiniD3fl.ComputeNode do
       node_id: node_id,
       model: model,
       data: data,
-      cn_id_channel_pid_dict: cn_id_channel_pid_dict
+      cn_id_channel_pid_dict: cn_id_channel_pid_dict,
+      availability: avail
     }) do
 
     {:ok,
@@ -60,7 +63,8 @@ defmodule MiniD3fl.ComputeNode do
       now_model: model,
       future_model: nil,
       data: data,
-      cn_id_channel_pid_dict: cn_id_channel_pid_dict
+      cn_id_channel_pid_dict: cn_id_channel_pid_dict,
+      availability: avail
     }}
   end
 
@@ -75,6 +79,27 @@ defmodule MiniD3fl.ComputeNode do
     GenServer.call(
       Utils.get_process_name(__MODULE__, from_node_id),
       {:send_to_channel, send_args}
+      )
+  end
+
+  def become_available(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:become_available}
+      )
+  end
+
+  def become_unavailable(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:become_unavailable}
+      )
+  end
+
+  def is_available(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:is_available}
       )
   end
 
@@ -102,4 +127,15 @@ defmodule MiniD3fl.ComputeNode do
     {:reply, nil, state}
   end
 
+  def handle_call({:become_available}, _from, state) do
+    {:reply, :ok, %State{state | availability: true}}
+  end
+
+  def handle_call({:become_unavailable}, _from, state) do
+    {:reply, :ok, %State{state | availability: false}}
+  end
+
+  def handle_call({:is_available}, _from, %State{availability: avail} = state) do
+    {:reply, avail == true, state}
+  end
 end
