@@ -2,6 +2,7 @@ defmodule MiniD3fl.JobController.EventQueue do
   @moduledoc """
   優先度付きキューを使用して、時刻順に命令を管理するモジュール
   """
+  # TODO: イベントを構造体にする。
 
   # 初期化。空のキューとして :gb_trees.empty を使う
   def init_queue do

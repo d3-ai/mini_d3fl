@@ -1,13 +1,36 @@
 defmodule MiniD3fl.ComputeNode do
   require Logger
   use GenServer
+  alias MiniD3fl.Utils
 
   defmodule State do
     defstruct node_id: nil,
-              model: %{}
+              now_model: nil,
+              future_model: nil,
+              data: nil
   end
 
-  def start_link(%{node_id: node_id} = args_tuple) do
+  defmodule InitArgs do
+    defstruct node_id: nil,
+              model: nil,
+              data: nil
+  end
+
+  defmodule TrainArgs do
+    defstruct node_id: nil
+  end
+
+  defmodule SendArgs do
+    defstruct from_node_id: nil,
+              to_node_id: nil,
+              channel_pid: nil
+  end
+
+  defmodule RenewModelArgs do
+    defstruct node_id: nil
+  end
+
+  def start_link(%InitArgs{node_id: node_id} = args_tuple) do
     GenServer.start_link(
       __MODULE__,
       args_tuple,
@@ -15,16 +38,19 @@ defmodule MiniD3fl.ComputeNode do
     )
   end
 
-  def init(%{
-    node_id: node_id,
-    model: model,
-    data: data
+  def init(
+    %InitArgs{
+      node_id: node_id,
+      model: model,
+      data: data
     }) do
 
     {:ok,
     %State{
       node_id: node_id,
-      model: model
+      now_model: model,
+      future_model: nil,
+      data: data
     }}
   end
 
