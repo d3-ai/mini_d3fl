@@ -67,10 +67,114 @@ defmodule MiniD3fl.ComputeNodeTest do
 
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model1
+
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    empty_queue =  {[], []}
+    assert queue == empty_queue
+    assert model_sum_size == 0
   end
 
-  test "receive model from ComputeNode to ComputeNode" do
+  test "should not receive model when receiver CN is unavailable" do
+    # ComputeNode の初期化
+    cn_setup(10)
+    cn_setup(20)
+    # 受け取り側の availability を falseにする
 
+    ComputeNode.become_unavailable(20)
+
+    # Channelの初期設定
+    # TODO: 関数化して切り出す（channel_testの中の共通部分も）
+
+    input_qos = %Channel.QoS{bandwidth: 100,
+                      packetloss: 0,
+                      capacity: 100}
+
+    init_args = %Channel.InitArgs{channel_id: 1,
+                  from_cn_id: 10,
+                  to_cn_id: 20,
+                  QoS: input_qos}
+
+    {:ok, channel_pid} = Channel.start_link(init_args)
+    model1 = %Model{size: 50, plain_model: "sample_plain_model"}
+
+    # 受け渡し
+    :ok = Channel.recv_model_at_channel(channel_pid, model1)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    received_queue = {[model1], []}
+
+    assert queue == received_queue
+    assert model_sum_size == model1.size
+
+    :ok = Channel.send_model_from_channel(channel_pid)
+
+    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == nil
+
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    empty_queue =  {[], []}
+    assert queue == empty_queue
+    assert model_sum_size == 0
+  end
+
+  test "should receive model with proper order" do
+    # ComputeNode の初期化
+    cn_setup(10)
+    cn_setup(20)
+
+    # 受け取り側の availability を trueにする
+
+    ComputeNode.become_available(20)
+
+    # Channelの初期設定
+    # TODO: 関数化して切り出す（channel_testの中の共通部分も）
+
+    input_qos = %Channel.QoS{bandwidth: 100,
+                      packetloss: 0,
+                      capacity: 100}
+
+    init_args = %Channel.InitArgs{channel_id: 1,
+                  from_cn_id: 10,
+                  to_cn_id: 20,
+                  QoS: input_qos}
+
+    {:ok, channel_pid} = Channel.start_link(init_args)
+    model1 = %Model{size: 50, plain_model: "sample_plain_model1"}
+    model2 = %Model{size: 40, plain_model: "sample_plain_model2"}
+
+    # 受け渡し
+    Channel.recv_model_at_channel(channel_pid, model1)
+    Channel.recv_model_at_channel(channel_pid, model2)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    received_queue = {[model2], [model1]} # model1 が先頭
+
+    assert queue == received_queue
+    assert model_sum_size == model1.size + model2.size
+
+    # model1 の送受信
+
+    :ok = Channel.send_model_from_channel(channel_pid)
+    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == model1
+
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    one_queue =  {[], [model2]}
+    assert queue == one_queue
+    assert model_sum_size == model2.size
+
+    # model2 の送受信
+
+    :ok = Channel.send_model_from_channel(channel_pid)
+    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == model2
+
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    empty_queue =  {[], []}
+    assert queue == empty_queue
+    assert model_sum_size == 0
+  end
+
+  test "should receive model from ComputeNode to ComputeNode" do
+  # TODO:
   end
 
 end

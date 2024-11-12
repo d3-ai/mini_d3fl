@@ -13,7 +13,7 @@ defmodule MiniD3fl.ComputeNode do
     defstruct node_id: nil,
               now_model: %Model{},
               future_model: %Model{},
-              receive_model: %Model{}, # あとで dict 化 or queue 化
+              receive_model: nil, # あとで dict 化 or queue 化
               data: nil,
               cn_id_channel_pid_dict: %{},
               availability: nil
