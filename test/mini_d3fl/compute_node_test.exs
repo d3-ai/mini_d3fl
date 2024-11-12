@@ -1,6 +1,8 @@
 defmodule MiniD3fl.ComputeNodeTest do
   use ExUnit.Case
   doctest MiniD3fl.ComputeNode
+  alias MiniD3fl.JobController
+  alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.ComputeNode
   alias MiniD3fl.ComputeNode.TrainArgs
   alias MiniD3fl.ComputeNode.InitArgs
@@ -16,6 +18,10 @@ defmodule MiniD3fl.ComputeNodeTest do
                     }
 
     {:ok, _pid}  = ComputeNode.start_link(args)
+    JobController.start_link(
+      %{job_controller_id: 0,
+      init_event_queue: EventQueue.init_queue})
+
     %{node_id: node_id}
   end
 
@@ -62,7 +68,7 @@ defmodule MiniD3fl.ComputeNodeTest do
 
     {:ok, channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
-    :ok = Channel.recv_model_at_channel(channel_pid, model1)
+    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
     :ok = Channel.send_model_from_channel(channel_pid)
 
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
@@ -78,6 +84,12 @@ defmodule MiniD3fl.ComputeNodeTest do
     # ComputeNode の初期化
     cn_setup(10)
     cn_setup(20)
+
+    # JobController の初期化
+    JobController.start_link(
+      %{job_controller_id: 0,
+      init_event_queue: EventQueue.init_queue})
+
     # 受け取り側の availability を falseにする
 
     ComputeNode.become_unavailable(20)
@@ -98,7 +110,7 @@ defmodule MiniD3fl.ComputeNodeTest do
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
 
     # 受け渡し
-    :ok = Channel.recv_model_at_channel(channel_pid, model1)
+    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
     %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
     received_queue = {[model1], []}
 
@@ -121,6 +133,11 @@ defmodule MiniD3fl.ComputeNodeTest do
     cn_setup(10)
     cn_setup(20)
 
+    # JobController の初期化
+    JobController.start_link(
+      %{job_controller_id: 0,
+      init_event_queue: EventQueue.init_queue})
+
     # 受け取り側の availability を trueにする
 
     ComputeNode.become_available(20)
@@ -142,8 +159,8 @@ defmodule MiniD3fl.ComputeNodeTest do
     model2 = %Model{size: 40, plain_model: "sample_plain_model2"}
 
     # 受け渡し
-    Channel.recv_model_at_channel(channel_pid, model1)
-    Channel.recv_model_at_channel(channel_pid, model2)
+    Channel.recv_model_at_channel(channel_pid, model1, 10)
+    Channel.recv_model_at_channel(channel_pid, model2, 20)
     %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
     received_queue = {[model2], [model1]} # model1 が先頭
 

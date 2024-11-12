@@ -13,9 +13,11 @@ defmodule MiniD3fl.ComputeNode do
     defstruct node_id: nil,
               now_model: %Model{},
               future_model: %Model{},
-              receive_model: nil, # あとで dict 化 or queue 化
+              receive_model: nil, #TODO: あとで dict 化 or queue 化
+              train_duration: 10, #TODO: あとで、CNごとに変化させる
               data: nil,
               cn_id_channel_pid_dict: %{},
+              in_train: false,
               availability: nil
   end
 
@@ -62,7 +64,7 @@ defmodule MiniD3fl.ComputeNode do
       data: data,
       cn_id_channel_pid_dict: cn_id_channel_pid_dict,
       availability: avail
-    }) do
+    } = _init_args) do
 
     {:ok,
     %State{
@@ -79,6 +81,13 @@ defmodule MiniD3fl.ComputeNode do
     GenServer.call(
       Utils.get_process_name(__MODULE__, node_id),
       {:train, args}
+    )
+  end
+
+  def complete_train(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:complete_train}
     )
   end
 
@@ -117,6 +126,13 @@ defmodule MiniD3fl.ComputeNode do
       )
   end
 
+  def get_train_duration(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:get_train_duration}
+      )
+  end
+
   def get_state(node_id) do
     GenServer.call(
       Utils.get_process_name(__MODULE__, node_id),
@@ -125,15 +141,23 @@ defmodule MiniD3fl.ComputeNode do
   end
 
   def handle_call({:train,
-                    args},
+                    _args},
                   _from,
-                  %State{node_id: node_id} = state) do
+                  %State{node_id: node_id, in_train: in_train} = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
-    # TODO: Trainに書き換える
+    # TODO: if in_train == false: Train に書き換える.
     new_model = nil
     train_results = :train_results
     # TODO: Trainした時の結果に書き換える
-    {:reply, train_results, %State{state | future_model: new_model}}
+    {:reply, train_results, %State{state | future_model: new_model, in_train: true}}
+  end
+
+  def handle_call({:complete_train}, _from,
+                  %State{future_model: future_model, in_train: in_train} =state) do
+    if in_train == false do
+      raise "ERROR: complete train when not training!!!"
+    end
+    {:reply, :ok, %State{state | now_model: future_model, future_model: nil, in_train: false}}
   end
 
   def handle_call({:send_to_channel,
@@ -165,6 +189,10 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:is_available}, _from, %State{availability: avail} = state) do
     {:reply, avail == true, state}
+  end
+
+  def handle_call({:get_train_duration}, _from, %State{train_duration: train_duration} = state) do
+    {:reply, train_duration, state}
   end
 
   def handle_call({:get_state}, _from, state) do

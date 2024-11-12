@@ -55,11 +55,12 @@ defmodule MiniD3fl.Channel do
     }
   end
 
-  def recv_model_at_channel(channel_pid, model) do
+  def recv_model_at_channel(channel_pid, model, now_time) do
     GenServer.call(
       channel_pid,
-      {:recv_model_at_channel, model}
+      {:recv_model_at_channel, channel_pid, now_time, model}
     )
+    #TODO: JobController IDの共有
   end
 
   def send_model_from_channel(channel_pid) do
@@ -75,7 +76,7 @@ defmodule MiniD3fl.Channel do
       {:get_state})
   end
 
-  def handle_call({:recv_model_at_channel,
+  def handle_call({:recv_model_at_channel, channel_pid, now_time,
                     %Model{size: model_size, plain_model: plain_model} = model},
                   _from,
                   %State{ channel_id: channel_id,
@@ -96,9 +97,12 @@ defmodule MiniD3fl.Channel do
         {:reply, {:warning, "paket loss"}, state}
       true ->
         #TODO: このときに、EventQueueにmodel_size/bandwidth秒後のresv_model_cnイベントを追加
+        recv_time = now_time + model_size / bandwidth
+        MiniD3fl.JobController.add_event_recv_model_at_cn(0, channel_pid, now_time, recv_time)
         {:reply, :ok, %State{
           state| queue: :queue.in(model, queue), model_sum_size: sum_size + model_size}}
     end
+
   end
 
   def handle_call({:send_model_from_channel},

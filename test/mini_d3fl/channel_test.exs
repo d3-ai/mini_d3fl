@@ -1,6 +1,8 @@
 defmodule MiniD3fl.ChannelTest do
   use ExUnit.Case
   doctest MiniD3fl.Channel
+  alias MiniD3fl.JobController
+  alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.Channel
   alias MiniD3fl.Channel.InitArgs
   alias MiniD3fl.Channel.QoS
@@ -17,6 +19,12 @@ defmodule MiniD3fl.ChannelTest do
                   QoS: input_qos}
 
     {:ok, pid} = Channel.start_link(init_args)
+
+
+    JobController.start_link(
+      %{job_controller_id: 0,
+      init_event_queue: EventQueue.init_queue})
+
     {:ok, pid: pid}
   end
 
@@ -24,14 +32,14 @@ defmodule MiniD3fl.ChannelTest do
   test "should not receive model over the limit of capacity", %{pid: channel_pid} do
     model = %Model{size: 1000,
                   plain_model: nil}
-    {:warning, string} = Channel.recv_model_at_channel(channel_pid, model)
+    {:warning, string} = Channel.recv_model_at_channel(channel_pid, model, 10)
     assert string == "over_the_limit"
   end
 
   test "should not receive model due to packetloss", %{pid: channel_pid} do
     model = %Model{size: 50,
                   plain_model: nil}
-    {:warning, string} = Channel.recv_model_at_channel(channel_pid, model)
+    {:warning, string} = Channel.recv_model_at_channel(channel_pid, model, 10)
     assert string == "paket loss"
   end
 
@@ -47,12 +55,17 @@ defmodule MiniD3fl.ChannelTest do
 
     {:ok, channel_pid} = Channel.start_link(init_args)
 
+    JobController.start_link(
+      %{job_controller_id: 0,
+      init_event_queue: EventQueue.init_queue})
+
+
     model1 = %Model{size: 50,
                   plain_model: nil}
     model2 = %Model{size: 40,
                   plain_model: nil}
-    :ok = Channel.recv_model_at_channel(channel_pid, model1)
-    :ok = Channel.recv_model_at_channel(channel_pid, model2)
+    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
+    :ok = Channel.recv_model_at_channel(channel_pid, model2, 20)
     %Channel.State{queue: queue, model_sum_size: size} = Channel.get_state(channel_pid)
 
     queue_desired = :queue.new()
@@ -75,15 +88,19 @@ defmodule MiniD3fl.ChannelTest do
 
     {:ok, channel_pid} = Channel.start_link(init_args)
 
+    JobController.start_link(
+      %{job_controller_id: 0,
+      init_event_queue: EventQueue.init_queue})
+
     model1 = %Model{size: 50,
                   plain_model: nil}
     model2 = %Model{size: 40,
                   plain_model: nil}
     model3 = %Model{size: 30,
                   plain_model: nil}
-    :ok = Channel.recv_model_at_channel(channel_pid, model1)
-    :ok = Channel.recv_model_at_channel(channel_pid, model2)
-    {:warning, "over_the_limit"} = Channel.recv_model_at_channel(channel_pid, model3)
+    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
+    :ok = Channel.recv_model_at_channel(channel_pid, model2, 20)
+    {:warning, "over_the_limit"} = Channel.recv_model_at_channel(channel_pid, model3, 30)
     %Channel.State{queue: queue, model_sum_size: size} = Channel.get_state(channel_pid)
 
     queue_desired = :queue.new()
