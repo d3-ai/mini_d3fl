@@ -28,6 +28,10 @@ defmodule MiniD3fl.JobController do
     }}
   end
 
+  def add_event_resv_model_at_cn() do
+
+  end
+
   def ask_required_time() do
 
   end

@@ -13,6 +13,7 @@ defmodule MiniD3fl.ComputeNode do
     defstruct node_id: nil,
               now_model: %Model{},
               future_model: %Model{},
+              receive_model: %Model{}, # あとで dict 化 or queue 化
               data: nil,
               cn_id_channel_pid_dict: %{},
               availability: nil
@@ -34,6 +35,12 @@ defmodule MiniD3fl.ComputeNode do
     defstruct from_node_id: nil,
               to_node_id: nil,
               channel_pid: nil
+  end
+
+  defmodule RecvArgs do
+    defstruct from_node_id: nil,
+              to_node_id: nil,
+              model: nil
   end
 
   defmodule RenewModelArgs do
@@ -82,6 +89,13 @@ defmodule MiniD3fl.ComputeNode do
       )
   end
 
+  def recv_model(%RecvArgs{to_node_id: to_node_id} = recv_args) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, to_node_id),
+      {:recv_model, recv_args}
+      )
+  end
+
   def become_available(node_id) do
     GenServer.call(
       Utils.get_process_name(__MODULE__, node_id),
@@ -100,6 +114,13 @@ defmodule MiniD3fl.ComputeNode do
     GenServer.call(
       Utils.get_process_name(__MODULE__, node_id),
       {:is_available}
+      )
+  end
+
+  def get_state(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:get_state}
       )
   end
 
@@ -124,7 +145,14 @@ defmodule MiniD3fl.ComputeNode do
 
     Channel.recv_model_at_channel(channel_pid, now_model)
     IO.puts "sent to channel pid #{channel_pid}"
-    {:reply, nil, state}
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:recv_model, %RecvArgs{model: model}},
+                  _from,
+                  state) do
+    {:reply, :ok, %State{state | receive_model: model}}
+    #TODO: もらってきたモデルはどこに置くか？ receive_modelを作った。後ほどdict化する？
   end
 
   def handle_call({:become_available}, _from, state) do
@@ -137,5 +165,9 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:is_available}, _from, %State{availability: avail} = state) do
     {:reply, avail == true, state}
+  end
+
+  def handle_call({:get_state}, _from, state) do
+    {:reply, state, state}
   end
 end

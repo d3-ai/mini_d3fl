@@ -62,6 +62,13 @@ defmodule MiniD3fl.Channel do
     )
   end
 
+  def send_model_from_channel(channel_pid) do
+    GenServer.call(
+      channel_pid,
+      {:send_model_from_channel}
+    )
+  end
+
   def get_state(channel_pid) do
     GenServer.call(
       channel_pid,
@@ -92,6 +99,34 @@ defmodule MiniD3fl.Channel do
         {:reply, :ok, %State{
           state| queue: :queue.in(model, queue), model_sum_size: sum_size + model_size}}
     end
+  end
+
+  def handle_call({:send_model_from_channel},
+                  _from,
+                  %State{ channel_id: channel_id,
+                          from_cn_id: from_cn_id,
+                          to_cn_id: to_cn_id,
+                          queue: queue,
+                          model_sum_size: sum_size,
+                          QoS: %QoS{
+                            bandwidth: bandwidth,
+                            packetloss: packetloss,
+                            capacity: capacity
+                          }} = state) do
+
+    {{:value, head_model}, new_queue} = :queue.out(queue)
+    %Model{size: head_model_size} = head_model
+    if ComputeNode.is_available(to_cn_id) do
+      ComputeNode.recv_model(%ComputeNode.RecvArgs{
+        from_node_id: from_cn_id,
+        to_node_id: to_cn_id,
+        model: head_model
+      })
+    else
+      IO.puts "ComputeNode #{to_cn_id} is unavailable"
+    end
+
+    {:reply, :ok, %State{state | queue: new_queue, model_sum_size: sum_size - head_model_size}}
   end
 
   def handle_call({:get_state}, _from, state) do
