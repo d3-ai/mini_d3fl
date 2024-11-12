@@ -96,8 +96,10 @@ defmodule MiniD3fl.Channel do
       is_loss_packet(packetloss) ->
         {:reply, {:warning, "paket loss"}, state}
       true ->
-        #TODO: このときに、EventQueueにmodel_size/bandwidth秒後のresv_model_cnイベントを追加
-        recv_time = now_time + model_size / bandwidth
+        # TODO: このときに、EventQueueにmodel_size/bandwidth秒後のresv_model_cnイベントを追加
+        recv_time = now_time + (sum_size + model_size) / bandwidth
+        # TODO: モデルを流している途中の場合のrecv_timeの計算
+        # TODO: ADD test
         MiniD3fl.JobController.add_event_recv_model_at_cn(0, channel_pid, now_time, recv_time)
         {:reply, :ok, %State{
           state| queue: :queue.in(model, queue), model_sum_size: sum_size + model_size}}
