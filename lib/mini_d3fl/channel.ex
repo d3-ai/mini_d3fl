@@ -1,6 +1,6 @@
 defmodule MiniD3fl.Channel do
   use GenServer
-  alias MiniD3fl.Utils
+  # alias MiniD3fl.Utils
   alias MiniD3fl.ComputeNode
   alias MiniD3fl.ComputeNode.Model
 
@@ -77,11 +77,11 @@ defmodule MiniD3fl.Channel do
   end
 
   def handle_call({:recv_model_at_channel, channel_pid, now_time,
-                    %Model{size: model_size, plain_model: plain_model} = model},
+                    %Model{size: model_size, plain_model: _plain_model} = model},
                   _from,
                   %State{ channel_id: channel_id,
-                          from_cn_id: from_cn_id,
-                          to_cn_id: to_cn_id,
+                          from_cn_id: _from_cn_id,
+                          to_cn_id: _to_cn_id,
                           queue: queue,
                           model_sum_size: sum_size,
                           QoS: %QoS{
@@ -107,15 +107,15 @@ defmodule MiniD3fl.Channel do
 
   def handle_call({:send_model_from_channel},
                   _from,
-                  %State{ channel_id: channel_id,
+                  %State{ channel_id: _channel_id,
                           from_cn_id: from_cn_id,
                           to_cn_id: to_cn_id,
                           queue: queue,
                           model_sum_size: sum_size,
                           QoS: %QoS{
-                            bandwidth: bandwidth,
-                            packetloss: packetloss,
-                            capacity: capacity
+                            bandwidth: _bandwidth,
+                            packetloss: _packetloss,
+                            capacity: _capacity
                           }} = state) do
 
     {{:value, head_model}, new_queue} = :queue.out(queue)

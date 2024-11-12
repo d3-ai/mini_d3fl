@@ -14,7 +14,7 @@ defmodule MiniD3fl.JobController.EventQueue do
   end
 
   # コマンドをキューに挿入する関数
-  def insert_command(queue, %Event{time: time, event_name: command, args: args} = event) do
+  def insert_command(queue, %Event{time: time, event_name: _command, args: _args} = event) do
     # タプルとしてコマンドを構成し、時刻をキーにしてキューに挿入
     :gb_trees.insert(time, event, queue)
   end
@@ -25,8 +25,8 @@ defmodule MiniD3fl.JobController.EventQueue do
       {value, event, new_queue} ->
         IO.puts(value)
         {event, new_queue}
-      _ ->
-        {:empty, queue} #TODO: キューが空の場合のエラーハンドリング
+      # _ ->
+      #   {:empty, queue} #TODO: キューが空の場合のエラーハンドリング
     end
   end
 end
