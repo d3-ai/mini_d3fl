@@ -81,10 +81,10 @@ defmodule MiniD3fl.JobController do
     event_loop(job_controller_id, state)
   end
 
-  def event_loop(job_controller_id, %State{event_queue: event_queue} = state) do
-    {event, event_queue} = event_queue.pop_command()
+  def event_loop(job_controller_id, %State{event_queue: event_queue} = _state) do
+    {event, _event_queue} = event_queue.pop_command()
 
-     message = case event do
+     _message = case event do
       %Event{time: time, event_name: :train, args: %ComputeNode.TrainArgs{node_id: node_id} = args} ->
         ComputeNode.train(args)
         # train終了のイベントを入れる
@@ -112,7 +112,7 @@ defmodule MiniD3fl.JobController do
 
       :empty ->
         IO.puts "=====SIMULATION END====="
-        :end
+        raise "END"
      end
   end
 end
