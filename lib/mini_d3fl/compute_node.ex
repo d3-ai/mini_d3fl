@@ -36,7 +36,8 @@ defmodule MiniD3fl.ComputeNode do
   defmodule SendArgs do
     defstruct from_node_id: nil,
               to_node_id: nil,
-              channel_pid: nil
+              channel_pid: nil,
+              time: nil
   end
 
   defmodule RecvArgs do
@@ -143,7 +144,7 @@ defmodule MiniD3fl.ComputeNode do
   def handle_call({:train,
                     _args},
                   _from,
-                  %State{node_id: node_id, in_train: in_train} = state) do
+                  %State{node_id: node_id, in_train: _in_train} = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
     # TODO: if in_train == false: Train に書き換える.
     new_model = nil
@@ -162,12 +163,14 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:send_to_channel,
                     %SendArgs{
-                      channel_pid: channel_pid
+                      channel_pid: channel_pid,
+                      time: time
                     }} = _send_args,
                     _from,
                     %State{now_model: now_model} = state) do
 
-    Channel.recv_model_at_channel(channel_pid, now_model)
+    #TODO: Channel.recv_model_at_channel/3
+    Channel.recv_model_at_channel(channel_pid, now_model, time)
     IO.puts "sent to channel pid #{channel_pid}"
     {:reply, :ok, state}
   end
