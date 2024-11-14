@@ -81,8 +81,8 @@ defmodule MiniD3fl.JobController do
     event_loop(job_controller_id, state)
   end
 
-  def event_loop(job_controller_id, %State{event_queue: event_queue} = _state) do
-    {event, _event_queue} = event_queue.pop_command()
+  def event_loop(job_controller_id, %State{event_queue: event_queue} = state) do
+    {event, event_queue} = EventQueue.pop_command(event_queue)
 
      _message = case event do
       %Event{time: time, event_name: :train, args: %ComputeNode.TrainArgs{node_id: node_id} = args} ->
@@ -92,17 +92,24 @@ defmodule MiniD3fl.JobController do
         end_time = time + train_duration
         add_event_train_complete(job_controller_id, node_id, time, end_time)
 
+        IO.puts "time #{time}: train @node_#{node_id}"
 
-      %Event{event_name: :send, args: %ComputeNode.SendArgs{} = args} ->
+      %Event{time: time, event_name: :send, args: %ComputeNode.SendArgs{from_node_id: from_id, to_node_id: to_id} = args} ->
         ComputeNode.send_to_channel(args)
         # DONE: Channel側からrecv_eventの追加をする。
         # TODO:? 後ほど非同期にするために、JobControllerからrecv_eventの追加をする?
 
-      %Event{event_name: :recv, args: channel_pid} ->
+        IO.puts "time #{time}: send from node_#{from_id} to node_#{to_id}"
+
+      %Event{time: time, event_name: :recv, args: channel_pid} ->
         Channel.send_model_from_channel(channel_pid)
 
-      %Event{event_name: :complete_train, args: node_id} ->
+        IO.puts "time #{time}: receive @channel_#{channel_pid}"
+
+      %Event{time: time, event_name: :complete_train, args: node_id} ->
         ComputeNode.complete_train(node_id)
+
+        IO.puts "time #{time}: complete train @node_#{node_id}"
 
       %Event{event_name: :available, args: node_id} ->
         ComputeNode.become_available(node_id)
