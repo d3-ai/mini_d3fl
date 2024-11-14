@@ -19,14 +19,14 @@ defmodule MiniD3fl.Channel do
               QoS: %QoS{}
   end
 
-  defmodule InitArgs do
+  defmodule ChannelArgs do
     defstruct channel_id: 0,
               from_cn_id: nil,
               to_cn_id: nil,
               QoS: %QoS{}
   end
 
-  def start_link(%InitArgs{} = args) do
+  def start_link(%ChannelArgs{} = args) do
     {:ok, channel_pid}
     = GenServer.start_link(
       __MODULE__,
@@ -36,7 +36,7 @@ defmodule MiniD3fl.Channel do
     {:ok, channel_pid}
   end
 
-  def init(%InitArgs{
+  def init(%ChannelArgs{
     channel_id: channel_id,
     from_cn_id: from_cn_id,
     to_cn_id: to_cn_id,

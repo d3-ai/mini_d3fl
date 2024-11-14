@@ -4,7 +4,7 @@ defmodule MiniD3fl.ChannelTest do
   alias MiniD3fl.JobController
   alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.Channel
-  alias MiniD3fl.Channel.InitArgs
+  alias MiniD3fl.Channel.ChannelArgs
   alias MiniD3fl.Channel.QoS
   alias MiniD3fl.ComputeNode.Model
 
@@ -13,7 +13,7 @@ defmodule MiniD3fl.ChannelTest do
                       packetloss: 1,
                       capacity: 100}
 
-    init_args = %InitArgs{channel_id: 1,
+    init_args = %ChannelArgs{channel_id: 1,
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}
@@ -48,7 +48,7 @@ defmodule MiniD3fl.ChannelTest do
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %InitArgs{channel_id: 1,
+    init_args = %ChannelArgs{channel_id: 1,
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}
@@ -81,7 +81,7 @@ defmodule MiniD3fl.ChannelTest do
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %InitArgs{channel_id: 1,
+    init_args = %ChannelArgs{channel_id: 1,
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}
