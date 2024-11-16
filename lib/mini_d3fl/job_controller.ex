@@ -1,8 +1,6 @@
 defmodule MiniD3fl.JobController do
   use GenServer
   require Logger
-  alias MiniD3fl.ComputeNode
-  alias MiniD3fl.Channel
   alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.JobController.EventQueue.Event
   alias MiniD3fl.Utils
