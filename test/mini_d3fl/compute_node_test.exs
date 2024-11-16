@@ -12,7 +12,6 @@ defmodule MiniD3fl.ComputeNodeTest do
   setup do
     node_id = 1
     args = %InitArgs{node_id: node_id,
-                      model: nil,
                       data: nil,
                       availability: true
                     }
@@ -27,7 +26,6 @@ defmodule MiniD3fl.ComputeNodeTest do
 
   def cn_setup(node_id) do
     args = %InitArgs{node_id: node_id,
-                      model: nil,
                       data: nil,
                       availability: true
                     }
