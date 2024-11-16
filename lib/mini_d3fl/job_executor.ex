@@ -110,7 +110,9 @@ defmodule MiniD3fl.JobExecutor do
       {:ok, event} ->
         event_execute(job_controller_id, event)
         event_loop(job_controller_id)
-      {:empty, _} -> IO.puts "Event Queue is Empty"
+      {:empty, _} ->
+        IO.puts "Event Queue is Empty"
+        IO.puts "=======SIMULATION END======="
       _ -> raise "ERROR"
     end
   end
@@ -151,10 +153,6 @@ defmodule MiniD3fl.JobExecutor do
 
       %Event{event_name: :unavailable, args: node_id} ->
         ComputeNode.become_unavailable(node_id)
-
-      :empty ->
-        IO.puts "=====SIMULATION END====="
-        raise "END"
      end
   end
 end
