@@ -59,6 +59,6 @@ defmodule MiniD3fl.JobExecutorTest do
     JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue})
 
     JobExecutor.simulate_execute(0)
-
+    #TODO: ADD test (timeline, inner state)
   end
 end
