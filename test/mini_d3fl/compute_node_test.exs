@@ -61,7 +61,7 @@ defmodule MiniD3fl.ComputeNodeTest do
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %Channel.InitArgs{channel_id: 1,
+    init_args = %Channel.ChannelArgs{channel_id: 1,
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}
@@ -101,7 +101,7 @@ defmodule MiniD3fl.ComputeNodeTest do
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %Channel.InitArgs{channel_id: 1,
+    init_args = %Channel.ChannelArgs{channel_id: 1,
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}
@@ -149,7 +149,7 @@ defmodule MiniD3fl.ComputeNodeTest do
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %Channel.InitArgs{channel_id: 1,
+    init_args = %Channel.ChannelArgs{channel_id: 1,
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}

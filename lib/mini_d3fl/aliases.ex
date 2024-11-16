@@ -9,6 +9,8 @@ defmodule MiniD3fl.Aliases do
       alias MiniD3fl.JobController
       alias MiniD3fl.JobController.EventQueue
       alias MiniD3fl.JobController.EventQueue.Event
+      alias MiniD3fl.JobExecutor
+      alias MiniD3fl.JobExecutor.JobExcInitArgs
     end
   end
 end

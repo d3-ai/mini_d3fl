@@ -3,6 +3,11 @@ defmodule MiniD3fl.JobController.EventQueue do
   優先度付きキューを使用して、時刻順に命令を管理するモジュール
   """
   defmodule Event do
+    @moduledoc"""
+      time: float,
+      event_name: atom,
+      args: (args for event_name)
+    """
     defstruct time: nil,
               event_name: nil,
               args: nil
@@ -20,13 +25,13 @@ defmodule MiniD3fl.JobController.EventQueue do
   end
 
   # 時刻順に最も早いコマンドを取得し、キューから削除
+  def pop_command({0, nil}) do
+    {:empty, nil, nil}
+  end
+
   def pop_command(queue) do
-    case :gb_trees.take_smallest(queue) do
-      {value, event, new_queue} ->
-        IO.puts(value)
-        {event, new_queue}
-      # _ ->
-      #   {:empty, queue} #TODO: キューが空の場合のエラーハンドリング
-    end
+    {value, event, new_queue} = :gb_trees.take_smallest(queue)
+    IO.puts(value)
+    {:ok, event, new_queue}
   end
 end

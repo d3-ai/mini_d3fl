@@ -14,7 +14,7 @@ defmodule MiniD3fl.ComputeNode do
               now_model: %Model{},
               future_model: %Model{},
               receive_model: nil, #TODO: あとで dict 化 or queue 化
-              train_duration: 10, #TODO: あとで、CNごとに変化させる
+              train_duration: 4, #TODO: あとで、CNごとに変化させる
               data: nil,
               cn_id_channel_pid_dict: %{},
               in_train: false,
@@ -22,6 +22,13 @@ defmodule MiniD3fl.ComputeNode do
   end
 
   defmodule InitArgs do
+    @moduledoc """
+    - node_id: nil,
+    - model: %Model{},
+    - data: nil,
+    - cn_id_channel_pid_dict: %{},
+    - availability: nil
+    """
     defstruct node_id: nil,
               model: %Model{},
               data: nil,
@@ -30,10 +37,19 @@ defmodule MiniD3fl.ComputeNode do
   end
 
   defmodule TrainArgs do
+    @moduledoc """
+    - node_id: int
+    """
     defstruct node_id: nil
   end
 
   defmodule SendArgs do
+    @moduledoc """
+    - from_node_id: int,
+    - to_node_id: int,
+    - channel_pid: pid,
+    - time: int
+    """
     defstruct from_node_id: nil,
               to_node_id: nil,
               channel_pid: nil,
@@ -41,12 +57,20 @@ defmodule MiniD3fl.ComputeNode do
   end
 
   defmodule RecvArgs do
+    @moduledoc """
+    - from_node_id: int,
+    - to_node_id: int,
+    - model: MiniD3fl.ComputeNode.Model
+    """
     defstruct from_node_id: nil,
               to_node_id: nil,
               model: nil
   end
 
   defmodule RenewModelArgs do
+  @moduledoc """
+  - node_id: int
+  """
     defstruct node_id: nil
   end
 
@@ -66,7 +90,7 @@ defmodule MiniD3fl.ComputeNode do
       cn_id_channel_pid_dict: cn_id_channel_pid_dict,
       availability: avail
     } = _init_args) do
-
+    IO.puts "New model #{model.size}"
     {:ok,
     %State{
       node_id: node_id,
@@ -147,7 +171,7 @@ defmodule MiniD3fl.ComputeNode do
                   %State{node_id: node_id, in_train: _in_train} = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
     # TODO: if in_train == false: Train に書き換える.
-    new_model = nil
+    new_model = %Model{size: 10, plain_model: "sample plain model"}
     train_results = :train_results
     # TODO: Trainした時の結果に書き換える
     {:reply, train_results, %State{state | future_model: new_model, in_train: true}}
@@ -171,7 +195,7 @@ defmodule MiniD3fl.ComputeNode do
 
     #TODO: Channel.recv_model_at_channel/3
     Channel.recv_model_at_channel(channel_pid, now_model, time)
-    IO.puts "sent to channel pid #{channel_pid}"
+    IO.inspect channel_pid
     {:reply, :ok, state}
   end
 

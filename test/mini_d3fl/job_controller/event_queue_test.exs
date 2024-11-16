@@ -14,13 +14,13 @@ defmodule MiniD3fl.JobController.EventQueueTest do
     queue = EventQueue.insert_command(queue, %Event{time: 7, event_name: :train, args: "Train C"})
 
     # 時刻順にコマンドを取り出し
-    {command, queue} = EventQueue.pop_command(queue)
+    {:ok, command, queue} = EventQueue.pop_command(queue)
     assert command == %Event{time: 3, event_name: :send, args: "Send B"}
 
-    {command, queue} = EventQueue.pop_command(queue)
+    {:ok, command, queue} = EventQueue.pop_command(queue)
     assert command == %Event{time: 5, event_name: :train, args: "Train A"}
 
-    {command, queue} = EventQueue.pop_command(queue)
+    {:ok, command, queue} = EventQueue.pop_command(queue)
     assert command == %Event{time: 7, event_name: :train, args: "Train C"}
 
     assert queue == {0, nil}

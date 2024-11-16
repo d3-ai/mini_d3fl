@@ -1,8 +1,10 @@
 defmodule MiniD3fl.Channel do
   use GenServer
-  # alias MiniD3fl.Utils
+  alias MiniD3fl.Utils
   alias MiniD3fl.ComputeNode
   alias MiniD3fl.ComputeNode.Model
+  alias MiniD3fl.JobController
+  alias MiniD3fl.JobController.EventQueue.Event
 
   defmodule QoS do
     defstruct bandwidth: nil,
@@ -100,7 +102,15 @@ defmodule MiniD3fl.Channel do
         recv_time = now_time + (sum_size + model_size) / bandwidth
         # TODO: モデルを流している途中の場合のrecv_timeの計算
         # TODO: ADD test
-        MiniD3fl.JobController.add_event_recv_model_at_cn(0, channel_pid, now_time, recv_time)
+        # TODO: controllerのidの指定
+        job_controller_id = 0
+        event = %Event{time: recv_time, event_name: :recv, args: channel_pid}
+
+        GenServer.call(
+          Utils.get_process_name(JobController, job_controller_id),
+          {:add_event, event}
+        )
+
         {:reply, :ok, %State{
           state| queue: :queue.in(model, queue), model_sum_size: sum_size + model_size}}
     end
