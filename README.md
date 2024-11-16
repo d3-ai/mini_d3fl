@@ -42,5 +42,6 @@ MiniD3flは、以下の４つの観点を満たす非中央集権型連合学習
 
 3. **Run the Simulator Sample [WIP]:**
    - ```bash
-    mix test test/mini_d3fl/job_executor_test.exs
-   ```
+      mix test test/mini_d3fl/job_executor_test.exs
+      ```
+   
