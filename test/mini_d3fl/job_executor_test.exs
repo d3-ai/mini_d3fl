@@ -46,7 +46,7 @@ defmodule MiniD3fl.JobExecutorTest do
       %{job_controller_id: job_controller_id,
       init_event_queue: queue})
     %{job_controller_id: job_controller_id, queue: queue}
-end
+  end
 
   def setup_compute_node(node_id) do
     args = %InitArgs{node_id: node_id,
