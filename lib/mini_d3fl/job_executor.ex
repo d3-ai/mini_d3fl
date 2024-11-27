@@ -147,7 +147,6 @@ defmodule MiniD3fl.JobExecutor do
         Channel.send_model_from_channel(channel_pid, time)
 
         IO.puts "time #{time}: receive @channel"
-        IO.inspect channel_pid
 
       %Event{time: time, event_name: :complete_train, args: node_id} ->
         ComputeNode.complete_train(node_id)
