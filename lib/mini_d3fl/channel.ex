@@ -17,6 +17,7 @@ defmodule MiniD3fl.Channel do
               from_cn_id: nil,
               to_cn_id: nil,
               queue: nil,
+              latest_model_sent_time: nil,
               model_sum_size: 0,
               QoS: %QoS{}
   end
@@ -65,10 +66,10 @@ defmodule MiniD3fl.Channel do
     #TODO: JobController IDの共有
   end
 
-  def send_model_from_channel(channel_pid) do
+  def send_model_from_channel(channel_pid, time) do
     GenServer.call(
       channel_pid,
-      {:send_model_from_channel}
+      {:send_model_from_channel, time}
     )
   end
 
@@ -86,6 +87,7 @@ defmodule MiniD3fl.Channel do
                           to_cn_id: _to_cn_id,
                           queue: queue,
                           model_sum_size: sum_size,
+                          latest_model_sent_time: sent_time,
                           QoS: %QoS{
                             bandwidth: bandwidth,
                             packetloss: packetloss,
@@ -98,10 +100,14 @@ defmodule MiniD3fl.Channel do
       is_loss_packet(packetloss) ->
         {:reply, {:warning, "paket loss"}, state}
       true ->
-        # TODO: このときに、EventQueueにmodel_size/bandwidth秒後のresv_model_cnイベントを追加
-        recv_time = now_time + (sum_size + model_size) / bandwidth
+        {recv_time, new_sent_time} = case sent_time do
+          nil ->
+            {now_time + (sum_size + model_size) / bandwidth, now_time}
+          _ ->
+            {now_time + (sum_size + model_size) / bandwidth - (now_time - sent_time), sent_time}
+        end
+
         # TODO: モデルを流している途中の場合のrecv_timeの計算
-        # TODO: ADD test
         # TODO: controllerのidの指定
         job_controller_id = 0
         event = %Event{time: recv_time, event_name: :recv, args: channel_pid}
@@ -112,12 +118,12 @@ defmodule MiniD3fl.Channel do
         )
 
         {:reply, :ok, %State{
-          state| queue: :queue.in(model, queue), model_sum_size: sum_size + model_size}}
+          state| queue: :queue.in(model, queue), model_sum_size: sum_size + model_size, latest_model_sent_time: new_sent_time}}
     end
 
   end
 
-  def handle_call({:send_model_from_channel},
+  def handle_call({:send_model_from_channel, time},
                   _from,
                   %State{ channel_id: _channel_id,
                           from_cn_id: from_cn_id,
@@ -142,7 +148,14 @@ defmodule MiniD3fl.Channel do
       IO.puts "ComputeNode #{to_cn_id} is unavailable"
     end
 
-    {:reply, :ok, %State{state | queue: new_queue, model_sum_size: sum_size - head_model_size}}
+    new_model_sum_size = sum_size - head_model_size
+
+    latest_model_time = if new_model_sum_size == 0 do
+      nil
+    else
+      time
+    end
+    {:reply, :ok, %State{state | queue: new_queue, model_sum_size: new_model_sum_size, latest_model_sent_time: latest_model_time}}
   end
 
   def handle_call({:get_state}, _from, state) do

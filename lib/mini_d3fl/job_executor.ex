@@ -14,8 +14,10 @@ defmodule MiniD3fl.JobExecutor do
               now_time: nil,
               CNs_to_Channel_pid_dict: nil,
               pid_to_CN_dict: nil,
-              pid_to_Channel_dict: nil
+              pid_to_Channel_dict: nil,
+              history: nil
   end
+
 
   defmodule JobExcInitArgs do
     @moduledoc """
@@ -101,18 +103,21 @@ defmodule MiniD3fl.JobExecutor do
   # end
 
   def handle_call({:simulate_execute}, _from, %State{job_controller_id: controller_id} = state) do
-    event_loop(controller_id)
-    {:reply, :ok, state}
+    init_history = []
+    history = event_loop(controller_id, init_history)
+    IO.inspect history
+    {:reply, history, %State{state | history: history}}
   end
 
-  def event_loop(job_controller_id) do
+  def event_loop(job_controller_id, history) do
     case GenServer.call(Utils.get_process_name(MiniD3fl.JobController, job_controller_id), {:get_event}) do
-      {:ok, event} ->
+      {:ok, %Event{time: time, event_name: name} = event} ->
         event_execute(job_controller_id, event)
-        event_loop(job_controller_id)
+        event_loop(job_controller_id, [%{time: time, event_name: name} | history])
       {:empty, _} ->
         IO.puts "Event Queue is Empty"
         IO.puts "=======SIMULATION END======="
+        history
       _ -> raise "ERROR"
     end
   end
@@ -138,7 +143,7 @@ defmodule MiniD3fl.JobExecutor do
         IO.puts "time #{time}: send from node_#{from_id} to node_#{to_id}"
 
       %Event{time: time, event_name: :recv, args: channel_pid} ->
-        Channel.send_model_from_channel(channel_pid)
+        Channel.send_model_from_channel(channel_pid, time)
 
         IO.puts "time #{time}: receive @channel"
         IO.inspect channel_pid

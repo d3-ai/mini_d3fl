@@ -19,9 +19,10 @@ defmodule MiniD3fl.JobController.EventQueue do
   end
 
   # コマンドをキューに挿入する関数
-  def insert_command(queue, %Event{time: time, event_name: _command, args: _args} = event) do
+  def insert_command(queue, %Event{time: time, event_name: command, args: args} = event) do
     # タプルとしてコマンドを構成し、時刻をキーにしてキューに挿入
-    :gb_trees.insert(time, event, queue)
+    #TODO: あとでcommandの間の優先順位をつけて、数値に変換するなど
+    :gb_trees.insert({time, command, args}, event, queue)
   end
 
   # 時刻順に最も早いコマンドを取得し、キューから削除
@@ -30,8 +31,8 @@ defmodule MiniD3fl.JobController.EventQueue do
   end
 
   def pop_command(queue) do
-    {value, event, new_queue} = :gb_trees.take_smallest(queue)
-    IO.puts(value)
+    {{time, _, _}, event, new_queue} = :gb_trees.take_smallest(queue)
+    IO.puts(time)
     {:ok, event, new_queue}
   end
 end

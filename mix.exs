@@ -21,6 +21,11 @@ defmodule MiniD3fl.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:axon, "~> 0.6", github:  "elixir-nx/axon"},
+      {:polaris, "~> 0.1"},
+      {:exla, "~> 0.6", github:  "elixir-nx/exla", sparse:  "exla", override: true},
+      {:nx, "~> 0.6", github:  "elixir-nx/nx", sparse:  "nx", override:  true},
+      {:scidata, "~> 0.1.11"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
