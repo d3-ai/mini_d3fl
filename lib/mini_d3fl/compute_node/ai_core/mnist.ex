@@ -41,6 +41,12 @@ defmodule Mnist do
     |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, epochs: epochs, compiler: EXLA)
   end
 
+  defp train_model_previous(model, train_images, train_labels, epochs) do
+    model
+    |> Axon.Loop.trainer(:categorical_cross_entropy, :adam)
+    |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, compiler: EXLA, epochs: epochs)
+  end
+
   defp test_model(model, model_state, test_images, test_labels) do
     model
     |> Axon.Loop.evaluator()
@@ -48,7 +54,10 @@ defmodule Mnist do
     |> Axon.Loop.run(Stream.zip(test_images, test_labels), model_state, compiler: EXLA)
   end
 
-  def run do
+  def run(former_model_state_data \\ %{}) do
+    epoch_num = 1
+
+    #TODO: 先にダウンロードしておく。あとは、データ分割をしておく。
     {images, labels} = Scidata.MNIST.download()
 
     {train_images, test_images} = transform_images(images)
@@ -60,14 +69,22 @@ defmodule Mnist do
 
     model_state =
       model
-      |> train_model(train_images, train_labels, 5)
+      |> train_model(train_images, train_labels, epoch_num)
 
     IO.write("\n\n Testing Model \n\n")
 
-    model
+    new_model_state_data = MiniD3fl.ComputeNode.AiCore.aggregate(model_state.data, former_model_state_data, 1)
+
+
+    ans = model
     |> test_model(model_state, test_images, test_labels)
 
     IO.write("\n\n")
 
+    %{
+      0 => metrix
+    } = ans
+
+    {:end_train, new_model_state_data, metrix}
   end
 end

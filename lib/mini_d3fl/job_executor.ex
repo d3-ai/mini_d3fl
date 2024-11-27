@@ -78,7 +78,8 @@ defmodule MiniD3fl.JobExecutor do
   def simulate_execute(job_executor_id) do
     GenServer.call(
       Utils.get_process_name(__MODULE__, job_executor_id),
-      {:simulate_execute}
+      {:simulate_execute},
+      :infinity
     )
   end
 

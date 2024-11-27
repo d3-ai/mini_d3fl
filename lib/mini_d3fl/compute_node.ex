@@ -105,7 +105,8 @@ defmodule MiniD3fl.ComputeNode do
   def train(%TrainArgs{node_id: node_id} = args) do
     GenServer.call(
       Utils.get_process_name(__MODULE__, node_id),
-      {:train, args}
+      {:train, args},
+      :infinity
     )
   end
 
@@ -168,11 +169,12 @@ defmodule MiniD3fl.ComputeNode do
   def handle_call({:train,
                     _args},
                   _from,
-                  %State{node_id: node_id, in_train: _in_train} = state) do
+                  %State{node_id: node_id, in_train: _in_train, now_model: now_model_state} = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
-    # TODO: if in_train == false: Train に書き換える.
-    new_model = %Model{size: 10, plain_model: "sample plain model"}
-    train_results = :train_results
+    #TODO: if in_train == false do
+    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state)
+    new_model = %Model{size: 10, plain_model: new_model_state_data}
+    train_results = metrix
     # TODO: Trainした時の結果に書き換える
     {:reply, train_results, %State{state | future_model: new_model, in_train: true}}
   end
