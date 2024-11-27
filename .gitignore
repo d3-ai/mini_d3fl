@@ -24,3 +24,5 @@ mini_d3fl-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+/data/
