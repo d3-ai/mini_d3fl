@@ -67,7 +67,7 @@ defmodule MiniD3fl.ComputeNodeTest do
     {:ok, channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
     :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
-    :ok = Channel.send_model_from_channel(channel_pid)
+    :ok = Channel.send_model_from_channel(channel_pid, 20)
 
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model1
@@ -115,7 +115,7 @@ defmodule MiniD3fl.ComputeNodeTest do
     assert queue == received_queue
     assert model_sum_size == model1.size
 
-    :ok = Channel.send_model_from_channel(channel_pid)
+    :ok = Channel.send_model_from_channel(channel_pid, 20)
 
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == nil
@@ -167,7 +167,7 @@ defmodule MiniD3fl.ComputeNodeTest do
 
     # model1 の送受信
 
-    :ok = Channel.send_model_from_channel(channel_pid)
+    :ok = Channel.send_model_from_channel(channel_pid, 30)
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model1
 
@@ -178,7 +178,7 @@ defmodule MiniD3fl.ComputeNodeTest do
 
     # model2 の送受信
 
-    :ok = Channel.send_model_from_channel(channel_pid)
+    :ok = Channel.send_model_from_channel(channel_pid, 40)
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model2
 

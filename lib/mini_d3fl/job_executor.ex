@@ -143,7 +143,7 @@ defmodule MiniD3fl.JobExecutor do
         IO.puts "time #{time}: send from node_#{from_id} to node_#{to_id}"
 
       %Event{time: time, event_name: :recv, args: channel_pid} ->
-        Channel.send_model_from_channel(channel_pid)
+        Channel.send_model_from_channel(channel_pid, time)
 
         IO.puts "time #{time}: receive @channel"
         IO.inspect channel_pid
