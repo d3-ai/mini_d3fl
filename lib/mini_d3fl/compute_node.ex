@@ -28,6 +28,7 @@ defmodule MiniD3fl.ComputeNode do
     - data: nil,
     - cn_id_channel_pid_dict: %{},
     - availability: nil
+    - data_dir_path: nil
     """
     defstruct node_id: nil,
               model: %Model{},
@@ -174,6 +175,7 @@ defmodule MiniD3fl.ComputeNode do
     #TODO: if in_train == false do
     {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state)
     new_model = %Model{size: 10, plain_model: new_model_state_data}
+    #TODO: model size を指定する
     train_results = metrix
     # TODO: Trainした時の結果に書き換える
     {:reply, train_results, %State{state | future_model: new_model, in_train: true}}
@@ -221,6 +223,7 @@ defmodule MiniD3fl.ComputeNode do
   end
 
   def handle_call({:get_train_duration}, _from, %State{train_duration: train_duration} = state) do
+    #TODO: unavailable な時をtrainから外す？
     {:reply, train_duration, state}
   end
 

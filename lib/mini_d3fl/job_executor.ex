@@ -15,7 +15,8 @@ defmodule MiniD3fl.JobExecutor do
               CNs_to_Channel_pid_dict: nil,
               pid_to_CN_dict: nil,
               pid_to_Channel_dict: nil,
-              history: nil
+              history: nil,
+              data_dir_path: nil
   end
 
 
@@ -24,8 +25,9 @@ defmodule MiniD3fl.JobExecutor do
     - job_executor_id: int
     - job_controller_id: int
     - event_queue: JobController.EventQueue
+    - data_dir_path: (directory path)
     """
-    defstruct [:job_executor_id, :job_controller_id, :init_event_queue]
+    defstruct [:job_executor_id, :job_controller_id, :init_event_queue, :data_dir_path]
   end
 
   def start_link(%JobExcInitArgs{job_executor_id: job_executor_id} = arg_map) do
@@ -37,11 +39,12 @@ defmodule MiniD3fl.JobExecutor do
     )
   end
 
-  def init(%JobExcInitArgs{job_executor_id: exec_node_id, job_controller_id: contr_node_id} = _arg_map) do
+  def init(%JobExcInitArgs{job_executor_id: exec_node_id, job_controller_id: contr_node_id, data_dir_path: path} = _arg_map) do
     {:ok,
     %State{
       job_executor_id: exec_node_id,
-      job_controller_id: contr_node_id
+      job_controller_id: contr_node_id,
+      data_dir_path: path
     }}
   end
 
@@ -103,18 +106,18 @@ defmodule MiniD3fl.JobExecutor do
   #   end
   # end
 
-  def handle_call({:simulate_execute}, _from, %State{job_controller_id: controller_id} = state) do
+  def handle_call({:simulate_execute}, _from, %State{job_controller_id: controller_id, data_dir_path: path} = state) do
     init_history = []
-    history = event_loop(controller_id, init_history)
+    history = event_loop(controller_id, init_history, path)
     IO.inspect history
     {:reply, history, %State{state | history: history}}
   end
 
-  def event_loop(job_controller_id, history) do
+  def event_loop(job_controller_id, history, path) do
     case GenServer.call(Utils.get_process_name(MiniD3fl.JobController, job_controller_id), {:get_event}) do
       {:ok, %Event{time: time, event_name: name} = event} ->
-        event_execute(job_controller_id, event)
-        event_loop(job_controller_id, [%{time: time, event_name: name} | history])
+        event_execute(job_controller_id, event, path)
+        event_loop(job_controller_id, [%{time: time, event_name: name} | history], path)
       {:empty, _} ->
         IO.puts "Event Queue is Empty"
         IO.puts "=======SIMULATION END======="
@@ -123,13 +126,20 @@ defmodule MiniD3fl.JobExecutor do
     end
   end
 
-  def event_execute(job_controller_id, event) do
+  def event_execute(job_controller_id, event, path) do
     case event do
       %Event{time: time, event_name: :train, args: %TrainArgs{node_id: node_id} = args} ->
-        ComputeNode.train(args)
+        matrix = ComputeNode.train(args)
         # train終了のイベントを入れる
         train_duration = ComputeNode.get_train_duration(node_id)
         end_time = time + train_duration
+
+        # write file
+        file_path = Path.join(path, "CaluculatorNode_#{node_id}.csv")
+        {:ok, fp} = File.open(file_path, [:append, :utf8])
+        IO.write(fp, "#{end_time}, #{matrix}\n")
+        File.close fp
+
         event = %Event{time: end_time, event_name: :complete_train, args: node_id}
         add_event(job_controller_id, event)
 

@@ -1,3 +1,102 @@
 defmodule MockHelper do
   use MiniD3fl.Aliases
+
+  defp prepare_data_directory!(node_counts) do
+    data_directory_path =
+      Application.get_env(:mini_d3fl, :data_directory_path) ||
+        raise """
+        You have to configure :data_directory_path in config.exs
+        ex) config :mini_d3fl, :data_directory_path, "path/to/directory"
+        """
+
+    dt_string = Data.datetime_to_string(DateTime.utc_now())
+    directory_name = "date_#{dt_string}_CalculatorNodeNum_#{node_counts}"
+    data_directory_path = Path.join(data_directory_path, directory_name)
+
+    File.mkdir_p!(data_directory_path)
+    data_directory_path
+  end
+
+  def measure(node_num) do
+    start = System.monotonic_time(:second)
+    data_directory_path = prepare_data_directory!(node_num)
+    # Mockのスタート
+
+    inner_start(data_directory_path)
+
+
+    last_time = System.monotonic_time(:second)
+    IO.inspect(last_time - start)
+    time_file_path = Path.join(data_directory_path, "exec_time.csv")
+    {:ok, fp} = File.open(time_file_path, [:append, :utf8])
+    IO.write(fp, "#{last_time - start} in sec\n")
+    File.close fp
+  end
+
+  def inner_start(data_directory_path) do
+    %{job_controller_id: job_controller_id, queue: queue} = setup_precise()
+    job_executor_id = 0
+    JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue, data_dir_path: data_directory_path})
+
+    history = JobExecutor.simulate_execute(0)
+  end
+
+  def setup_job_controller_precise(channel_pid) do
+      # キューの初期化
+      queue = EventQueue.init_queue()
+
+      # コマンドを挿入
+      queue = EventQueue.insert_command(queue,%Event{time: 5, event_name: :train, args: %TrainArgs{node_id: 10}})
+      queue = EventQueue.insert_command(queue,%Event{time: 10, event_name: :send, args: %SendArgs{from_node_id: 10,
+                                                                                          to_node_id: 20,
+                                                                                          channel_pid: channel_pid,
+                                                                                          time: 10}})
+      queue = EventQueue.insert_command(queue,%Event{time: 11, event_name: :send, args: %SendArgs{from_node_id: 10,
+                                                                                          to_node_id: 20,
+                                                                                          channel_pid: channel_pid,
+                                                                                          time: 11}})
+      queue = EventQueue.insert_command(queue,%Event{time: 12, event_name: :send, args: %SendArgs{from_node_id: 10,
+                                                                                          to_node_id: 20,
+                                                                                          channel_pid: channel_pid,
+                                                                                          time: 12}})
+      queue = EventQueue.insert_command(queue,%Event{time: 7, event_name: :train, args: %TrainArgs{node_id: 20}})
+
+      job_controller_id = 0
+      {:ok, _pid} = JobController.start_link(
+        %{job_controller_id: job_controller_id,
+        init_event_queue: queue})
+      %{job_controller_id: job_controller_id, queue: queue}
+  end
+
+  def setup_precise(bandwidth \\ 1) do
+    setup_compute_node(10)
+    setup_compute_node(20)
+    {:ok, channel_pid} = setup_channel(bandwidth)
+    setup_job_controller_precise(channel_pid)
+  end
+
+  def setup_compute_node(node_id) do
+    args = %InitArgs{node_id: node_id,
+                      data: nil,
+                      availability: true
+                    }
+
+    {:ok, _pid}  = ComputeNode.start_link(args)
+    %{node_id: node_id}
+  end
+
+  def setup_channel(bandwidth \\ 100) do
+    # Channelの初期設定
+
+    input_qos = %Channel.QoS{bandwidth: bandwidth,
+                      packetloss: 0,
+                      capacity: 100}
+
+    init_args = %Channel.ChannelArgs{channel_id: 1,
+                  from_cn_id: 10,
+                  to_cn_id: 20,
+                  QoS: input_qos}
+
+    {:ok, _channel_pid} = Channel.start_link(init_args)
+  end
 end
