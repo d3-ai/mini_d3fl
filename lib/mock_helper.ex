@@ -1,7 +1,7 @@
 defmodule MockHelper do
   use MiniD3fl.Aliases
 
-  defp prepare_data_directory!(node_counts) do
+  def prepare_data_directory!(node_counts) do
     data_directory_path =
       Application.get_env(:mini_d3fl, :data_directory_path) ||
         raise """

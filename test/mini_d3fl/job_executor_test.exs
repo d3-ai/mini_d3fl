@@ -90,7 +90,8 @@ defmodule MiniD3fl.JobExecutorTest do
   test "should exec JobExecutor" do
     %{job_controller_id: job_controller_id, queue: queue} = setup_rough()
     job_executor_id = 0
-    JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue})
+    path = MockHelper.prepare_data_directory!("sample")
+    JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue, data_dir_path: path})
 
     history = JobExecutor.simulate_execute(0)
     #TODO: ADD test (timeline, inner state)
@@ -110,7 +111,8 @@ defmodule MiniD3fl.JobExecutorTest do
   test "should exec JobExecutor with precise latency" do
     %{job_controller_id: job_controller_id, queue: queue} = setup_precise()
     job_executor_id = 0
-    JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue})
+    path = MockHelper.prepare_data_directory!("sample")
+    JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue, data_dir_path: data_directory_path = path})
 
     history = JobExecutor.simulate_execute(0)
     #TODO: ADD test (timeline, inner state)
