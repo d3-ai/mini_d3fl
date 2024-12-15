@@ -32,7 +32,6 @@ defmodule MiniD3fl.JobController.EventQueue do
 
   def pop_command(queue) do
     {{time, _, _}, event, new_queue} = :gb_trees.take_smallest(queue)
-    IO.puts(time)
     {:ok, event, new_queue}
   end
 end

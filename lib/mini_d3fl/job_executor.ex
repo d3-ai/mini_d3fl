@@ -12,9 +12,6 @@ defmodule MiniD3fl.JobExecutor do
     defstruct job_executor_id: 0,
               job_controller_id: 0,
               now_time: nil,
-              CNs_to_Channel_pid_dict: nil,
-              pid_to_CN_dict: nil,
-              pid_to_Channel_dict: nil,
               history: nil
   end
 
@@ -59,20 +56,6 @@ defmodule MiniD3fl.JobExecutor do
     )
   end
 
-  # def add_event_recv_model_at_cn(job_controller_id, channel_pid, now_time, recv_time) do
-  #   GenServer.call(
-  #     MiniD3fl.JobController,
-  #     {:add_event, },
-  #     name: Utils.get_process_name(MiniD3fl.JobController, job_controller_id))
-  # end
-
-  # def add_event_train_complete(job_controller_id, node_id, now_time, end_time) do
-  #   GenServer.call(
-  #     Utils.get_process_name(__MODULE__, job_controller_id),
-  #     {:train_complete, node_id, now_time, end_time}
-  #   )
-  # end
-
   def ask_required_time() do
 
   end
@@ -84,24 +67,6 @@ defmodule MiniD3fl.JobExecutor do
       :infinity
     )
   end
-
-  # def handle_call({:train_complete, node_id, now_time, end_time}, _from, %State{event_queue: event_queue} = state) do
-  #   if now_time < end_time do
-  #     event_queue =EventQueue.insert_command(event_queue, %Event{time: end_time, event_name: :complete_train, args: node_id})
-  #     {:reply, :ok, %State{state | event_queue: event_queue}}
-  #   else
-  #     raise "ERROR: TIME reversed"
-  #   end
-  # end
-
-  # def handle_call({:recv_model_at_cn, channel_pid, now_time, recv_time}, _from, %State{event_queue: event_queue} = state) do
-  #   if now_time < recv_time do
-  #     event_queue =EventQueue.insert_command(event_queue, %Event{time: recv_time, event_name: :recv, args: channel_pid})
-  #     {:reply, :ok, %State{state | event_queue: event_queue}}
-  #   else
-  #     raise "ERROR: TIME reversed"
-  #   end
-  # end
 
   def handle_call({:simulate_execute}, _from, %State{job_controller_id: controller_id} = state) do
     init_history = []
@@ -143,8 +108,8 @@ defmodule MiniD3fl.JobExecutor do
 
         IO.puts "time #{time}: send from node_#{from_id} to node_#{to_id}"
 
-      %Event{time: time, event_name: :recv, args: channel_pid} ->
-        Channel.send_model_from_channel(channel_pid, time)
+      %Event{time: time, event_name: :recv, args: %{from_id: fid, to_id: tid}} ->
+        Channel.send_model_from_channel(fid, tid, time)
 
         IO.puts "time #{time}: receive @channel"
 

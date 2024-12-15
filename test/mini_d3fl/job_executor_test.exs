@@ -10,7 +10,6 @@ defmodule MiniD3fl.JobExecutorTest do
       queue = EventQueue.insert_command(queue,%Event{time: 5, event_name: :train, args: %TrainArgs{node_id: 10}})
       queue = EventQueue.insert_command(queue,%Event{time: 10, event_name: :send, args: %SendArgs{from_node_id: 10,
                                                                                           to_node_id: 20,
-                                                                                          channel_pid: channel_pid,
                                                                                           time: 10}})
       queue = EventQueue.insert_command(queue,%Event{time: 7, event_name: :train, args: %TrainArgs{node_id: 20}})
 
@@ -29,15 +28,12 @@ defmodule MiniD3fl.JobExecutorTest do
     queue = EventQueue.insert_command(queue,%Event{time: 5, event_name: :train, args: %TrainArgs{node_id: 10}})
     queue = EventQueue.insert_command(queue,%Event{time: 10, event_name: :send, args: %SendArgs{from_node_id: 10,
                                                                                         to_node_id: 20,
-                                                                                        channel_pid: channel_pid,
                                                                                         time: 10}})
     queue = EventQueue.insert_command(queue,%Event{time: 11, event_name: :send, args: %SendArgs{from_node_id: 10,
                                                                                         to_node_id: 20,
-                                                                                        channel_pid: channel_pid,
                                                                                         time: 11}})
     queue = EventQueue.insert_command(queue,%Event{time: 12, event_name: :send, args: %SendArgs{from_node_id: 10,
                                                                                         to_node_id: 20,
-                                                                                        channel_pid: channel_pid,
                                                                                         time: 12}})
     queue = EventQueue.insert_command(queue,%Event{time: 7, event_name: :train, args: %TrainArgs{node_id: 20}})
 
@@ -46,7 +42,7 @@ defmodule MiniD3fl.JobExecutorTest do
       %{job_controller_id: job_controller_id,
       init_event_queue: queue})
     %{job_controller_id: job_controller_id, queue: queue}
-end
+  end
 
   def setup_compute_node(node_id) do
     args = %InitArgs{node_id: node_id,
@@ -65,7 +61,7 @@ end
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %Channel.ChannelArgs{channel_id: 1,
+    init_args = %Channel.ChannelArgs{
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}

@@ -13,7 +13,7 @@ defmodule MiniD3fl.ChannelTest do
                       packetloss: 1,
                       capacity: 100}
 
-    init_args = %ChannelArgs{channel_id: 1,
+    init_args = %ChannelArgs{
                   from_cn_id: 10,
                   to_cn_id: 20,
                   QoS: input_qos}
@@ -25,21 +25,21 @@ defmodule MiniD3fl.ChannelTest do
       %{job_controller_id: 0,
       init_event_queue: EventQueue.init_queue})
 
-    {:ok, pid: pid}
+    {:ok, cn_from_id: 10, cn_to_id: 20}
   end
 
 
-  test "should not receive model over the limit of capacity", %{pid: channel_pid} do
+  test "should not receive model over the limit of capacity", %{cn_from_id: fid, cn_to_id: tid} do
     model = %Model{size: 1000,
                   plain_model: nil}
-    {:warning, string} = Channel.recv_model_at_channel(channel_pid, model, 10)
+    {:warning, string} = Channel.recv_model_at_channel(fid, tid, model, 10)
     assert string == "over_the_limit"
   end
 
-  test "should not receive model due to packetloss", %{pid: channel_pid} do
+  test "should not receive model due to packetloss", %{cn_from_id: fid, cn_to_id: tid} do
     model = %Model{size: 50,
                   plain_model: nil}
-    {:warning, string} = Channel.recv_model_at_channel(channel_pid, model, 10)
+    {:warning, string} = Channel.recv_model_at_channel(fid, tid, model, 10)
     assert string == "paket loss"
   end
 
@@ -48,9 +48,11 @@ defmodule MiniD3fl.ChannelTest do
                       packetloss: 0,
                       capacity: 100}
 
-    init_args = %ChannelArgs{channel_id: 1,
-                  from_cn_id: 10,
-                  to_cn_id: 20,
+    fid = 100
+    tid = 200
+    init_args = %ChannelArgs{
+                  from_cn_id: fid,
+                  to_cn_id: tid,
                   QoS: input_qos}
 
     {:ok, channel_pid} = Channel.start_link(init_args)
@@ -64,9 +66,9 @@ defmodule MiniD3fl.ChannelTest do
                   plain_model: nil}
     model2 = %Model{size: 40,
                   plain_model: nil}
-    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
-    :ok = Channel.recv_model_at_channel(channel_pid, model2, 20)
-    %Channel.State{queue: queue, model_sum_size: size} = Channel.get_state(channel_pid)
+    :ok = Channel.recv_model_at_channel(fid, tid, model1, 10)
+    :ok = Channel.recv_model_at_channel(fid, tid, model2, 20)
+    %Channel.State{queue: queue, model_sum_size: size} = Channel.get_state(fid, tid)
 
     queue_desired = :queue.new()
     queue_desired = :queue.in(model1, queue_desired)
@@ -80,10 +82,11 @@ defmodule MiniD3fl.ChannelTest do
     input_qos = %QoS{bandwidth: 100,
                       packetloss: 0,
                       capacity: 100}
-
-    init_args = %ChannelArgs{channel_id: 1,
-                  from_cn_id: 10,
-                  to_cn_id: 20,
+    fid = 100
+    tid = 200
+    init_args = %ChannelArgs{
+                  from_cn_id: fid,
+                  to_cn_id: tid,
                   QoS: input_qos}
 
     {:ok, channel_pid} = Channel.start_link(init_args)
@@ -98,10 +101,10 @@ defmodule MiniD3fl.ChannelTest do
                   plain_model: nil}
     model3 = %Model{size: 30,
                   plain_model: nil}
-    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
-    :ok = Channel.recv_model_at_channel(channel_pid, model2, 20)
-    {:warning, "over_the_limit"} = Channel.recv_model_at_channel(channel_pid, model3, 30)
-    %Channel.State{queue: queue, model_sum_size: size} = Channel.get_state(channel_pid)
+    :ok = Channel.recv_model_at_channel(fid, tid, model1, 10)
+    :ok = Channel.recv_model_at_channel(fid, tid, model2, 20)
+    {:warning, "over_the_limit"} = Channel.recv_model_at_channel(fid, tid, model3, 30)
+    %Channel.State{queue: queue, model_sum_size: size} = Channel.get_state(fid, tid)
 
     queue_desired = :queue.new()
     queue_desired = :queue.in(model1, queue_desired)
