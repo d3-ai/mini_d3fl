@@ -23,8 +23,7 @@ defmodule MiniD3fl.Channel do
   end
 
   defmodule ChannelArgs do
-    defstruct channel_id: 0,
-              from_cn_id: nil,
+    defstruct from_cn_id: nil,
               to_cn_id: nil,
               QoS: %QoS{}
   end
@@ -40,7 +39,6 @@ defmodule MiniD3fl.Channel do
   end
 
   def init(%ChannelArgs{
-    channel_id: channel_id,
     from_cn_id: from_cn_id,
     to_cn_id: to_cn_id,
     QoS: qos
@@ -48,7 +46,6 @@ defmodule MiniD3fl.Channel do
     queue = :queue.new
     {
       :ok, %State{
-        channel_id: channel_id,
         from_cn_id: from_cn_id,
         to_cn_id: to_cn_id,
         queue: queue,
@@ -73,11 +70,11 @@ defmodule MiniD3fl.Channel do
     )
   end
 
-  # def get_state(channel_pid) do
-  #   GenServer.call(
-  #     channel_pid,
-  #     {:get_state})
-  # end
+  def get_state(from_id, to_id) do
+    GenServer.call(
+      Utils.get_channel_name(from_id, to_id),
+      {:get_state})
+  end
 
   def handle_call({:recv_model_at_channel, now_time,
                     %Model{size: model_size, plain_model: _plain_model} = model},

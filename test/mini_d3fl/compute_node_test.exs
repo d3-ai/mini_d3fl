@@ -58,21 +58,22 @@ defmodule MiniD3fl.ComputeNodeTest do
     input_qos = %Channel.QoS{bandwidth: 100,
                       packetloss: 0,
                       capacity: 100}
-
-    init_args = %Channel.ChannelArgs{channel_id: 1,
-                  from_cn_id: 10,
-                  to_cn_id: 20,
+    fid = 10
+    tid = 20
+    init_args = %Channel.ChannelArgs{
+                  from_cn_id: fid,
+                  to_cn_id: tid,
                   QoS: input_qos}
 
     {:ok, channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
-    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
-    :ok = Channel.send_model_from_channel(channel_pid, 20)
+    :ok = Channel.recv_model_at_channel(fid, tid, model1, 10)
+    :ok = Channel.send_model_from_channel(fid, tid, 20)
 
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model1
 
-    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     empty_queue =  {[], []}
     assert queue == empty_queue
     assert model_sum_size == 0
@@ -98,29 +99,30 @@ defmodule MiniD3fl.ComputeNodeTest do
     input_qos = %Channel.QoS{bandwidth: 100,
                       packetloss: 0,
                       capacity: 100}
-
-    init_args = %Channel.ChannelArgs{channel_id: 1,
-                  from_cn_id: 10,
-                  to_cn_id: 20,
+    fid = 10
+    tid = 20
+    init_args = %Channel.ChannelArgs{
+                  from_cn_id: fid,
+                  to_cn_id: tid,
                   QoS: input_qos}
 
     {:ok, channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
 
     # 受け渡し
-    :ok = Channel.recv_model_at_channel(channel_pid, model1, 10)
-    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    :ok = Channel.recv_model_at_channel(fid, tid, model1, 10)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     received_queue = {[model1], []}
 
     assert queue == received_queue
     assert model_sum_size == model1.size
 
-    :ok = Channel.send_model_from_channel(channel_pid, 20)
+    :ok = Channel.send_model_from_channel(fid, tid, 20)
 
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == nil
 
-    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     empty_queue =  {[], []}
     assert queue == empty_queue
     assert model_sum_size == 0
@@ -146,10 +148,11 @@ defmodule MiniD3fl.ComputeNodeTest do
     input_qos = %Channel.QoS{bandwidth: 100,
                       packetloss: 0,
                       capacity: 100}
-
-    init_args = %Channel.ChannelArgs{channel_id: 1,
-                  from_cn_id: 10,
-                  to_cn_id: 20,
+    fid = 10
+    tid = 20
+    init_args = %Channel.ChannelArgs{
+                  from_cn_id: fid,
+                  to_cn_id: tid,
                   QoS: input_qos}
 
     {:ok, channel_pid} = Channel.start_link(init_args)
@@ -157,9 +160,9 @@ defmodule MiniD3fl.ComputeNodeTest do
     model2 = %Model{size: 40, plain_model: "sample_plain_model2"}
 
     # 受け渡し
-    Channel.recv_model_at_channel(channel_pid, model1, 10)
-    Channel.recv_model_at_channel(channel_pid, model2, 20)
-    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    Channel.recv_model_at_channel(fid, tid, model1, 10)
+    Channel.recv_model_at_channel(fid, tid, model2, 20)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     received_queue = {[model2], [model1]} # model1 が先頭
 
     assert queue == received_queue
@@ -167,22 +170,22 @@ defmodule MiniD3fl.ComputeNodeTest do
 
     # model1 の送受信
 
-    :ok = Channel.send_model_from_channel(channel_pid, 30)
+    :ok = Channel.send_model_from_channel(fid, tid, 30)
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model1
 
-    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     one_queue =  {[], [model2]}
     assert queue == one_queue
     assert model_sum_size == model2.size
 
     # model2 の送受信
 
-    :ok = Channel.send_model_from_channel(channel_pid, 40)
+    :ok = Channel.send_model_from_channel(fid, tid, 40)
     %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
     assert recv_model == model2
 
-    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(channel_pid)
+    %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     empty_queue =  {[], []}
     assert queue == empty_queue
     assert model_sum_size == 0

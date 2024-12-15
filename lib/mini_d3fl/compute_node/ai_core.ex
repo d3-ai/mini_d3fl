@@ -2,6 +2,10 @@ defmodule MiniD3fl.ComputeNode.AiCore do
   use GenServer
   alias Mnist
 
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
+
   def run(former_model \\ %{}) do
     # train and run
     # sample
