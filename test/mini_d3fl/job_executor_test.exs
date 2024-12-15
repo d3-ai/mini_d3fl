@@ -2,7 +2,7 @@ defmodule MiniD3fl.JobExecutorTest do
   use ExUnit.Case
   use MiniD3fl.Aliases
 
-  def setup_job_controller(channel_pid) do
+  def setup_job_controller(_channel_pid) do
       # キューの初期化
       queue = EventQueue.init_queue()
 
@@ -20,7 +20,7 @@ defmodule MiniD3fl.JobExecutorTest do
       %{job_controller_id: job_controller_id, queue: queue}
   end
 
-  def setup_job_controller_precise(channel_pid) do
+  def setup_job_controller_precise(_channel_pid) do
     # キューの初期化
     queue = EventQueue.init_queue()
 
@@ -101,6 +101,10 @@ defmodule MiniD3fl.JobExecutorTest do
     ]
 
     assert history == desired_history
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(10, 20), :normal, :infinity)
   end
 
   test "should exec JobExecutor with precise latency" do
@@ -125,5 +129,9 @@ defmodule MiniD3fl.JobExecutorTest do
     ]
 
     assert history == desired_history
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(10, 20), :normal, :infinity)
   end
 end
