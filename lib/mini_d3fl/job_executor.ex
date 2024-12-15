@@ -12,7 +12,8 @@ defmodule MiniD3fl.JobExecutor do
     defstruct job_executor_id: 0,
               job_controller_id: 0,
               now_time: nil,
-              history: nil
+              history: nil,
+              data_dir_path: nil
   end
 
 
@@ -22,7 +23,7 @@ defmodule MiniD3fl.JobExecutor do
     - job_controller_id: int
     - event_queue: JobController.EventQueue
     """
-    defstruct [:job_executor_id, :job_controller_id, :init_event_queue]
+    defstruct [:job_executor_id, :job_controller_id, :init_event_queue, :data_dir_path]
   end
 
   def start_link(%JobExcInitArgs{job_executor_id: job_executor_id} = arg_map) do
@@ -34,11 +35,15 @@ defmodule MiniD3fl.JobExecutor do
     )
   end
 
-  def init(%JobExcInitArgs{job_executor_id: exec_node_id, job_controller_id: contr_node_id} = _arg_map) do
+  def init(%JobExcInitArgs{
+    job_executor_id: exec_node_id,
+    job_controller_id: contr_node_id,
+    data_dir_path: data_dir_path} = _arg_map) do
     {:ok,
     %State{
       job_executor_id: exec_node_id,
-      job_controller_id: contr_node_id
+      job_controller_id: contr_node_id,
+      data_dir_path: data_dir_path
     }}
   end
 
