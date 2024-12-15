@@ -101,6 +101,10 @@ defmodule MiniD3fl.JobExecutorTest do
     ]
 
     assert history == desired_history
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(10, 20), :normal, :infinity)
   end
 
   test "should exec JobExecutor with precise latency" do
@@ -125,5 +129,9 @@ defmodule MiniD3fl.JobExecutorTest do
     ]
 
     assert history == desired_history
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(10, 20), :normal, :infinity)
   end
 end

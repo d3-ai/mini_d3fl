@@ -1,12 +1,13 @@
 defmodule MiniD3fl.ChannelTest do
   use ExUnit.Case
   doctest MiniD3fl.Channel
-  alias MiniD3fl.JobController
-  alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.Channel
   alias MiniD3fl.Channel.ChannelArgs
   alias MiniD3fl.Channel.QoS
   alias MiniD3fl.ComputeNode.Model
+  alias MiniD3fl.JobController
+  alias MiniD3fl.JobController.EventQueue
+  alias MiniD3fl.Utils
 
   setup do
     input_qos = %QoS{bandwidth: 100,
@@ -34,6 +35,8 @@ defmodule MiniD3fl.ChannelTest do
                   plain_model: nil}
     {:warning, string} = Channel.recv_model_at_channel(fid, tid, model, 10)
     assert string == "over_the_limit"
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(fid, tid), :normal, :infinity)
   end
 
   test "should not receive model due to packetloss", %{cn_from_id: fid, cn_to_id: tid} do
@@ -41,6 +44,8 @@ defmodule MiniD3fl.ChannelTest do
                   plain_model: nil}
     {:warning, string} = Channel.recv_model_at_channel(fid, tid, model, 10)
     assert string == "paket loss"
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(fid, tid), :normal, :infinity)
   end
 
   test "should receive models and increment the state" do
@@ -76,6 +81,8 @@ defmodule MiniD3fl.ChannelTest do
 
     assert queue == queue_desired
     assert size == 90
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(fid, tid), :normal, :infinity)
   end
 
   test "should receive models until limit is reached" do
@@ -112,6 +119,8 @@ defmodule MiniD3fl.ChannelTest do
 
     assert queue == queue_desired
     assert size == 90
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
+    GenServer.stop(Utils.get_channel_name(fid, tid), :normal, :infinity)
   end
 
   test "should have correct packetloss rate" do

@@ -4,6 +4,7 @@ defmodule MiniD3fl.JobControllerTest do
   alias MiniD3fl.JobController
   alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.JobController.EventQueue.Event
+  alias MiniD3fl.Utils
 
   def setup() do
     # キューの初期化
@@ -34,5 +35,7 @@ defmodule MiniD3fl.JobControllerTest do
 
     {:ok, event} = JobController.get_event(job_controller_id)
     assert event == %Event{time: 7, event_name: :train, args: %{}}
+
+    GenServer.stop(Utils.get_process_name(JobController, 0), :normal, :infinity)
   end
 end
