@@ -29,13 +29,13 @@ defmodule MiniD3fl.Channel do
               QoS: %QoS{}
   end
 
-  def start_link(%ChannelArgs{} = args) do
+  def start_link(
+    %ChannelArgs{from_cn_id: from_id, to_cn_id: to_id} = args) do
     {:ok, channel_pid}
     = GenServer.start_link(
       __MODULE__,
-      args)
-    IO.puts "channel_pid is"
-    IO.inspect channel_pid
+      args,
+      name: Utils.get_channel_name(from_id, to_id))
     {:ok, channel_pid}
   end
 
@@ -58,33 +58,33 @@ defmodule MiniD3fl.Channel do
     }
   end
 
-  def recv_model_at_channel(channel_pid, model, now_time) do
+  def recv_model_at_channel(from_id, to_id, model, now_time) do
     GenServer.call(
-      channel_pid,
-      {:recv_model_at_channel, channel_pid, now_time, model}
+      Utils.get_channel_name(from_id, to_id),
+      {:recv_model_at_channel, now_time, model}
     )
     #TODO: JobController IDの共有
   end
 
-  def send_model_from_channel(channel_pid, time) do
+  def send_model_from_channel(fid, tid, time) do
     GenServer.call(
-      channel_pid,
+      Utils.get_channel_name(fid, tid),
       {:send_model_from_channel, time}
     )
   end
 
-  def get_state(channel_pid) do
-    GenServer.call(
-      channel_pid,
-      {:get_state})
-  end
+  # def get_state(channel_pid) do
+  #   GenServer.call(
+  #     channel_pid,
+  #     {:get_state})
+  # end
 
-  def handle_call({:recv_model_at_channel, channel_pid, now_time,
+  def handle_call({:recv_model_at_channel, now_time,
                     %Model{size: model_size, plain_model: _plain_model} = model},
                   _from,
                   %State{ channel_id: channel_id,
-                          from_cn_id: _from_cn_id,
-                          to_cn_id: _to_cn_id,
+                          from_cn_id: from_cn_id,
+                          to_cn_id: to_cn_id,
                           queue: queue,
                           model_sum_size: sum_size,
                           latest_model_sent_time: sent_time,
@@ -107,10 +107,9 @@ defmodule MiniD3fl.Channel do
             {now_time + (sum_size + model_size) / bandwidth - (now_time - sent_time), sent_time}
         end
 
-        # TODO: モデルを流している途中の場合のrecv_timeの計算
         # TODO: controllerのidの指定
         job_controller_id = 0
-        event = %Event{time: recv_time, event_name: :recv, args: channel_pid}
+        event = %Event{time: recv_time, event_name: :recv, args: %{from_id: from_cn_id, to_id: to_cn_id}}
 
         GenServer.call(
           Utils.get_process_name(JobController, job_controller_id),

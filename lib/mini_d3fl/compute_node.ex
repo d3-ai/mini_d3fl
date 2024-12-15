@@ -16,7 +16,6 @@ defmodule MiniD3fl.ComputeNode do
               receive_model: nil, #TODO: あとで dict 化 or queue 化
               train_duration: 4, #TODO: あとで、CNごとに変化させる
               data: nil,
-              cn_id_channel_pid_dict: %{},
               in_train: false,
               availability: nil
   end
@@ -26,13 +25,11 @@ defmodule MiniD3fl.ComputeNode do
     - node_id: nil,
     - model: %Model{},
     - data: nil,
-    - cn_id_channel_pid_dict: %{},
     - availability: nil
     """
     defstruct node_id: nil,
               model: %Model{},
               data: nil,
-              cn_id_channel_pid_dict: %{},
               availability: nil
   end
 
@@ -47,12 +44,10 @@ defmodule MiniD3fl.ComputeNode do
     @moduledoc """
     - from_node_id: int,
     - to_node_id: int,
-    - channel_pid: pid,
     - time: int
     """
     defstruct from_node_id: nil,
               to_node_id: nil,
-              channel_pid: nil,
               time: nil
   end
 
@@ -87,7 +82,6 @@ defmodule MiniD3fl.ComputeNode do
       node_id: node_id,
       model: model,
       data: data,
-      cn_id_channel_pid_dict: cn_id_channel_pid_dict,
       availability: avail
     } = _init_args) do
     IO.puts "New model #{model.size}"
@@ -97,7 +91,6 @@ defmodule MiniD3fl.ComputeNode do
       now_model: model,
       future_model: nil,
       data: data,
-      cn_id_channel_pid_dict: cn_id_channel_pid_dict,
       availability: avail
     }}
   end
@@ -189,15 +182,15 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:send_to_channel,
                     %SendArgs{
-                      channel_pid: channel_pid,
+                      from_node_id: from_node_id,
+                      to_node_id: to_node_id,
                       time: time
                     }} = _send_args,
                     _from,
                     %State{now_model: now_model} = state) do
 
     #TODO: Channel.recv_model_at_channel/3
-    Channel.recv_model_at_channel(channel_pid, now_model, time)
-    IO.inspect channel_pid
+    Channel.recv_model_at_channel(from_node_id, to_node_id, now_model, time)
     {:reply, :ok, state}
   end
 
