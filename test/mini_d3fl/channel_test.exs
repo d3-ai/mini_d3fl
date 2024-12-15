@@ -18,7 +18,7 @@ defmodule MiniD3fl.ChannelTest do
                   to_cn_id: 20,
                   QoS: input_qos}
 
-    {:ok, pid} = Channel.start_link(init_args)
+    {:ok, _pid} = Channel.start_link(init_args)
 
 
     JobController.start_link(
@@ -55,7 +55,7 @@ defmodule MiniD3fl.ChannelTest do
                   to_cn_id: tid,
                   QoS: input_qos}
 
-    {:ok, channel_pid} = Channel.start_link(init_args)
+    {:ok, _channel_pid} = Channel.start_link(init_args)
 
     JobController.start_link(
       %{job_controller_id: 0,
@@ -89,7 +89,7 @@ defmodule MiniD3fl.ChannelTest do
                   to_cn_id: tid,
                   QoS: input_qos}
 
-    {:ok, channel_pid} = Channel.start_link(init_args)
+    {:ok, _channel_pid} = Channel.start_link(init_args)
 
     JobController.start_link(
       %{job_controller_id: 0,

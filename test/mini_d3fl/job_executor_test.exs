@@ -2,7 +2,7 @@ defmodule MiniD3fl.JobExecutorTest do
   use ExUnit.Case
   use MiniD3fl.Aliases
 
-  def setup_job_controller(channel_pid) do
+  def setup_job_controller(_channel_pid) do
       # キューの初期化
       queue = EventQueue.init_queue()
 
@@ -20,7 +20,7 @@ defmodule MiniD3fl.JobExecutorTest do
       %{job_controller_id: job_controller_id, queue: queue}
   end
 
-  def setup_job_controller_precise(channel_pid) do
+  def setup_job_controller_precise(_channel_pid) do
     # キューの初期化
     queue = EventQueue.init_queue()
 

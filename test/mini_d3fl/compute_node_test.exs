@@ -48,7 +48,7 @@ defmodule MiniD3fl.ComputeNodeTest do
     assert ComputeNode.is_available(node_id) == true
   end
 
-  test "should receive model from channel", %{node_id: node_id} do
+  test "should receive model from channel", %{node_id: _node_id} do
     cn_setup(10)
     cn_setup(20)
 
@@ -65,7 +65,7 @@ defmodule MiniD3fl.ComputeNodeTest do
                   to_cn_id: tid,
                   QoS: input_qos}
 
-    {:ok, channel_pid} = Channel.start_link(init_args)
+    {:ok, _channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
     :ok = Channel.recv_model_at_channel(fid, tid, model1, 10)
     :ok = Channel.send_model_from_channel(fid, tid, 20)
@@ -106,7 +106,7 @@ defmodule MiniD3fl.ComputeNodeTest do
                   to_cn_id: tid,
                   QoS: input_qos}
 
-    {:ok, channel_pid} = Channel.start_link(init_args)
+    {:ok, _channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model"}
 
     # 受け渡し
@@ -155,7 +155,7 @@ defmodule MiniD3fl.ComputeNodeTest do
                   to_cn_id: tid,
                   QoS: input_qos}
 
-    {:ok, channel_pid} = Channel.start_link(init_args)
+    {:ok, _channel_pid} = Channel.start_link(init_args)
     model1 = %Model{size: 50, plain_model: "sample_plain_model1"}
     model2 = %Model{size: 40, plain_model: "sample_plain_model2"}
 

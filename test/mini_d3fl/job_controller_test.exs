@@ -1,7 +1,6 @@
 defmodule MiniD3fl.JobControllerTest do
   use ExUnit.Case
   doctest MiniD3fl.JobController
-  alias MiniD3fl.JobController.JobExcInitArgs
   alias MiniD3fl.JobController
   alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.JobController.EventQueue.Event
@@ -16,7 +15,7 @@ defmodule MiniD3fl.JobControllerTest do
     queue = EventQueue.insert_command(queue,%Event{time: 7, event_name: :train, args: %{}})
 
     job_controller_id = 0
-    {:ok, pid} = JobController.start_link(
+    {:ok, _pid} = JobController.start_link(
       %{job_controller_id: job_controller_id,
       init_event_queue: queue})
     %{job_controller_id: job_controller_id, queue: queue}
