@@ -1,13 +1,14 @@
 defmodule MiniD3fl.ComputeNodeTest do
   use ExUnit.Case
   doctest MiniD3fl.ComputeNode
-  alias MiniD3fl.JobController
-  alias MiniD3fl.JobController.EventQueue
   alias MiniD3fl.ComputeNode
   alias MiniD3fl.ComputeNode.TrainArgs
   alias MiniD3fl.ComputeNode.InitArgs
   alias MiniD3fl.ComputeNode.Model
   alias MiniD3fl.Channel
+  alias MiniD3fl.JobController
+  alias MiniD3fl.JobController.EventQueue
+  alias MiniD3fl.Utils
 
   setup do
     node_id = 1
@@ -38,6 +39,7 @@ defmodule MiniD3fl.ComputeNodeTest do
   test "should train with proper state", %{node_id: node_id} do
     ComputeNode.train(%TrainArgs{node_id: node_id})
     assert true
+    GenServer.stop(Utils.get_process_name(ComputeNode, node_id), :normal, :infinity)
   end
 
   test "should tuggle availability", %{node_id: node_id} do
@@ -46,6 +48,7 @@ defmodule MiniD3fl.ComputeNodeTest do
     assert ComputeNode.is_available(node_id) == false
     ComputeNode.become_available(node_id)
     assert ComputeNode.is_available(node_id) == true
+    GenServer.stop(Utils.get_process_name(ComputeNode, node_id), :normal, :infinity)
   end
 
   test "should receive model from channel", %{node_id: _node_id} do
@@ -77,6 +80,9 @@ defmodule MiniD3fl.ComputeNodeTest do
     empty_queue =  {[], []}
     assert queue == empty_queue
     assert model_sum_size == 0
+
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
   end
 
   test "should not receive model when receiver CN is unavailable" do
@@ -126,6 +132,9 @@ defmodule MiniD3fl.ComputeNodeTest do
     empty_queue =  {[], []}
     assert queue == empty_queue
     assert model_sum_size == 0
+
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
   end
 
   test "should receive model with proper order" do
@@ -189,6 +198,9 @@ defmodule MiniD3fl.ComputeNodeTest do
     empty_queue =  {[], []}
     assert queue == empty_queue
     assert model_sum_size == 0
+
+    GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
+    GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
   end
 
   test "should receive model from ComputeNode to ComputeNode" do
