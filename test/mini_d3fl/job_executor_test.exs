@@ -47,7 +47,8 @@ defmodule MiniD3fl.JobExecutorTest do
   def setup_compute_node(node_id) do
     args = %InitArgs{node_id: node_id,
                       data: nil,
-                      availability: true
+                      availability: true,
+                      model: %Model{size: 10, plain_model: nil}
                     }
 
     {:ok, _pid}  = ComputeNode.start_link(args)

@@ -82,9 +82,11 @@ defmodule Mnist do
     IO.write("\n\n")
 
     %{
-      0 => metrix
+      0 => %{
+        "Accuracy" => accuracy
+      }
     } = ans
-
-    {:end_train, new_model_state_data, metrix}
+    accuracy = Nx.to_number(accuracy)
+    {:end_train, new_model_state_data, accuracy}
   end
 end

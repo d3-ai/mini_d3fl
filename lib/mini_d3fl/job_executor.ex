@@ -119,7 +119,7 @@ defmodule MiniD3fl.JobExecutor do
         IO.puts "time #{time}: receive @channel"
 
       %Event{time: time, event_name: :complete_train, args: node_id} ->
-        ComputeNode.complete_train(node_id)
+        ComputeNode.complete_train(node_id, time)
 
         IO.puts "time #{time}: complete train @node_#{node_id}"
 
