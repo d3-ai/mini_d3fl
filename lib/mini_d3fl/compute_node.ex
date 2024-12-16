@@ -90,6 +90,12 @@ defmodule MiniD3fl.ComputeNode do
       data_folder: folder
     } = _init_args) do
     IO.puts "New model #{model.size}"
+
+    path = case folder do
+      nil -> nil
+      _ -> Path.join(folder, "CaluculatorNode_#{node_id}.csv")
+    end
+
     {:ok,
     %State{
       node_id: node_id,
@@ -97,7 +103,7 @@ defmodule MiniD3fl.ComputeNode do
       future_model: nil,
       data: data,
       availability: avail,
-      data_path: Path.join(folder, "CaluculatorNode_#{node_id}.csv")
+      data_path: path
     }}
   end
 
@@ -185,9 +191,11 @@ defmodule MiniD3fl.ComputeNode do
       raise "ERROR: complete train when not training!!!"
     end
 
-    {:ok, fp} = File.open(file_path, [:append, :utf8])
-    IO.write(fp, "#{time}, #{metrix}\n")
-    File.close fp
+    if file_path do
+      {:ok, fp} = File.open(file_path, [:append, :utf8])
+      IO.write(fp, "#{time}, #{metrix}\n")
+      File.close fp
+    end
 
     {:reply, :ok, %State{state | now_model: future_model, future_model: nil, in_train: false}}
   end
