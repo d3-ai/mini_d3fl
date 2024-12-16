@@ -11,13 +11,15 @@ defmodule MiniD3fl.ComputeNode do
 
   defmodule State do
     defstruct node_id: nil,
-              now_model: %Model{size: 10, plain_model: nil},
+              now_model: %Model{},
               future_model: %Model{},
               receive_model: nil, #TODO: あとで dict 化 or queue 化
               train_duration: 4, #TODO: あとで、CNごとに変化させる
               data: nil,
               in_train: false,
-              availability: nil
+              availability: nil,
+              future_matrix: nil,
+              data_path: nil
   end
 
   defmodule InitArgs do
@@ -25,12 +27,14 @@ defmodule MiniD3fl.ComputeNode do
     - node_id: nil,
     - model: %Model{},
     - data: nil,
-    - availability: nil
+    - availability: nil,
+    - data_folder: nil
     """
     defstruct node_id: nil,
               model: %Model{},
               data: nil,
-              availability: nil
+              availability: nil,
+              data_folder: nil
   end
 
   defmodule TrainArgs do
@@ -82,7 +86,8 @@ defmodule MiniD3fl.ComputeNode do
       node_id: node_id,
       model: model,
       data: data,
-      availability: avail
+      availability: avail,
+      data_folder: folder
     } = _init_args) do
     IO.puts "New model #{model.size}"
     {:ok,
@@ -91,7 +96,8 @@ defmodule MiniD3fl.ComputeNode do
       now_model: model,
       future_model: nil,
       data: data,
-      availability: avail
+      availability: avail,
+      data_path: Path.join(folder, "CaluculatorNode_#{node_id}.csv")
     }}
   end
 
@@ -103,10 +109,10 @@ defmodule MiniD3fl.ComputeNode do
     )
   end
 
-  def complete_train(node_id) do
+  def complete_train(node_id, time) do
     GenServer.call(
       Utils.get_process_name(__MODULE__, node_id),
-      {:complete_train}
+      {:complete_train, time}
     )
   end
 
@@ -162,21 +168,27 @@ defmodule MiniD3fl.ComputeNode do
   def handle_call({:train,
                     _args},
                   _from,
-                  %State{node_id: node_id, in_train: _in_train, now_model: now_model_state} = state) do
+                  %State{node_id: node_id, in_train: _in_train, now_model: now_model_state, data_path: _file_path} = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
     #TODO: if in_train == false do
     {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state)
     new_model = %Model{size: now_model_state.size, plain_model: new_model_state_data}
     train_results = metrix
+
     # TODO: Trainした時の結果に書き換える
-    {:reply, train_results, %State{state | future_model: new_model, in_train: true}}
+    {:reply, train_results, %State{state | future_model: new_model, in_train: true, future_matrix: metrix}}
   end
 
-  def handle_call({:complete_train}, _from,
-                  %State{future_model: future_model, in_train: in_train} =state) do
+  def handle_call({:complete_train, time}, _from,
+                  %State{future_model: future_model, in_train: in_train, data_path: file_path, future_matrix: metrix} =state) do
     if in_train == false do
       raise "ERROR: complete train when not training!!!"
     end
+
+    {:ok, fp} = File.open(file_path, [:append, :utf8])
+    IO.write(fp, "#{time}, #{metrix}\n")
+    File.close fp
+
     {:reply, :ok, %State{state | now_model: future_model, future_model: nil, in_train: false}}
   end
 

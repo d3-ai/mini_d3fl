@@ -34,7 +34,7 @@ defmodule NumMock do
   end
 
   def inner_start(data_directory_path, node_num) do
-    %{job_controller_id: job_controller_id, queue: queue} = setup_num(node_num)
+    %{job_controller_id: job_controller_id, queue: queue} = setup_num(node_num, data_directory_path)
     job_executor_id = 0
     JobExecutor.start_link(%JobExcInitArgs{
       job_executor_id: job_executor_id,
@@ -46,12 +46,12 @@ defmodule NumMock do
     _history = JobExecutor.simulate_execute(0)
   end
 
-  def setup_num(num) do
-    setup_compute_node(num)
+  def setup_num(num, data_dir_path) do
+    setup_compute_node(num, data_dir_path)
     queue = EventQueue.init_queue()
     queue = for i <- 1..(num-1), reduce: queue do
       acc_queue ->
-        setup_compute_node(i)
+        setup_compute_node(i, data_dir_path)
         {:ok, _channel_pid} = setup_channel(i, i+1)
         {:ok, _channel_pid} = setup_channel(i+1, i)
         setup_queue_num(acc_queue, i)
@@ -102,11 +102,12 @@ defmodule NumMock do
     queue
   end
 
-  def setup_compute_node(node_id) do
+  def setup_compute_node(node_id, data_dir_path) do
     args = %InitArgs{node_id: node_id,
                       data: nil,
                       availability: true,
-                      model: %Model{size: 100, plain_model: nil}
+                      model: %Model{size: 100, plain_model: nil},
+                      data_folder: data_dir_path
                     }
 
     {:ok, _pid}  = ComputeNode.start_link(args)
