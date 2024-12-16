@@ -13,7 +13,6 @@ MiniD3flは、以下の４つの観点を満たす非中央集権型連合学習
 
 ## TODO
 コード内に'#TODO'と書かれている部分を参照のこと。
-- [ ] **Mock（サンプル例）を簡単に描けるようにする（keyがnodeid であるchannel pidの辞書をexecutorに作成、イベント指定の時間指定の重複をなくす）**
 - [ ] **サンプルを高度化（ノードが一列、ランダム、スター、リング）**
 - [ ] **Supervised Treeの追加**
 
@@ -38,8 +37,12 @@ MiniD3flは、以下の４つの観点を満たす非中央集権型連合学習
       mix deps.get
       ```
 
-3. **Run the Simulator Sample [WIP]:**
+3. **Run the Simulator Sample:**
    - ```bash
-      mix test test/mini_d3fl/job_executor_test.exs
+      iex --erl "+t 2000000" -S mix
+     iex(1)> NumMock.measure(5)
       ```
+
+     `+t 2000000`によって、elixir の atom数上限を2000000などにする。（Compute Nodeが1000程度の場合.）
+     NumMock.measure(5)で、Compute Nodeが５個の場合の、一列のネットワークトポロジーでのサンプルが実行される。
    
