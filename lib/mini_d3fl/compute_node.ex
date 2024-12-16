@@ -11,7 +11,7 @@ defmodule MiniD3fl.ComputeNode do
 
   defmodule State do
     defstruct node_id: nil,
-              now_model: %Model{},
+              now_model: %Model{size: 10, plain_model: nil},
               future_model: %Model{},
               receive_model: nil, #TODO: あとで dict 化 or queue 化
               train_duration: 4, #TODO: あとで、CNごとに変化させる
@@ -166,7 +166,7 @@ defmodule MiniD3fl.ComputeNode do
     IO.puts "Node id: #{node_id} in TRAIN"
     #TODO: if in_train == false do
     {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state)
-    new_model = %Model{size: 10, plain_model: new_model_state_data}
+    new_model = %Model{size: now_model_state.size, plain_model: new_model_state_data}
     train_results = metrix
     # TODO: Trainした時の結果に書き換える
     {:reply, train_results, %State{state | future_model: new_model, in_train: true}}
