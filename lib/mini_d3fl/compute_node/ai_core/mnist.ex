@@ -41,12 +41,6 @@ defmodule Mnist do
     |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, epochs: epochs, compiler: EXLA)
   end
 
-  # defp train_model_previous(model, train_images, train_labels, epochs) do
-  #   model
-  #   |> Axon.Loop.trainer(:categorical_cross_entropy, :adam)
-  #   |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, compiler: EXLA, epochs: epochs)
-  # end
-
   defp test_model(model, model_state, test_images, test_labels) do
     model
     |> Axon.Loop.evaluator()
