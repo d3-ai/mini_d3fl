@@ -9,8 +9,14 @@ defmodule MiniD3fl.ComputeNode.AiCore do
 
   def run(former_model \\ %{}, data_name, client_id, client_num, sample_rate) do
     case data_name do
-      :mnist -> Mnist.run(former_model, client_id, client_num, sample_rate)
-      :cifar10 -> Cifar10.run(former_model, client_id, client_num, sample_rate)
+      :mnist ->
+        IO.puts("Mnist")
+        Mnist.run(former_model, client_id, client_num, sample_rate)
+
+      :cifar10 ->
+        IO.puts("Cifar10")
+        Cifar10.run(former_model, client_id, client_num, sample_rate)
+      _ -> IO.puts "Not Implemented"
     end
   end
   def data_download(:mnist, client_num, sample_rate) do

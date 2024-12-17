@@ -6,4 +6,10 @@ defmodule MiniD3fl.ComputeNode.AiCoreTest do
     {value, _, _} = MiniD3fl.ComputeNode.AiCore.run(%{}, :mnist, 1, 2, 0.5)
     assert value == :end_train
   end
+
+  @tag timeout: :infinity
+  test "should train and test for Cifar10" do
+    {value, _, _} = MiniD3fl.ComputeNode.AiCore.run(%{}, :cifar10, 1, 2, 0.5)
+    assert value == :end_train
+  end
 end

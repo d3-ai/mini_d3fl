@@ -2,12 +2,6 @@ defmodule MiniD3fl.DataLoader do
   use GenServer
   require Logger
   alias MiniD3fl.ComputeNode.AiCore
-  alias MiniD3fl.JobController
-  alias MiniD3fl.ComputeNode.TrainArgs
-  alias MiniD3fl.ComputeNode
-  alias MiniD3fl.Channel
-  alias MiniD3fl.JobController.EventQueue.Event
-  alias MiniD3fl.Utils
 
   defmodule MlData do
     defstruct locals_train: nil,
@@ -38,9 +32,9 @@ defmodule MiniD3fl.DataLoader do
       client_num: client_num,
       sample_rate: sample_rate} = _arg_map) when is_atom(name) do
 
-
-      ml_data = AiCore.data_download(name, client_num, sample_rate)
       IO.puts "Init DataLoader"
+      ml_data = AiCore.data_download(name, client_num, sample_rate)
+
     {:ok,
     %State{
       ml_data: ml_data

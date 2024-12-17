@@ -94,14 +94,14 @@ defmodule Cifar10 do
   end
 
   def run(former_model_state_data \\ %{}, client_id, client_num, sample_rate) do
-    epoch_num = 10
+    epoch_num = 3
 
     case Process.whereis(DataLoader) do
       nil ->
         # プロセスが起動していない場合、起動する
         {:ok, _pid} = DataLoader.start_link(
           %DataLoader.DataLoaderInitArgs{
-            data_name: :mnist,
+            data_name: :cifar10,
             client_num: client_num,
             sample_rate: sample_rate}
           )
