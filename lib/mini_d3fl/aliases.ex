@@ -6,6 +6,7 @@ defmodule MiniD3fl.Aliases do
       alias MiniD3fl.Channel
       alias MiniD3fl.Channel.{ChannelArgs, QoS}
       alias MiniD3fl.Data
+      alias MiniD3fl.DataLoader
       alias MiniD3fl.JobController
       alias MiniD3fl.JobController.EventQueue
       alias MiniD3fl.JobController.EventQueue.Event

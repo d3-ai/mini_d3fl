@@ -11,6 +11,7 @@ defmodule MiniD3fl.ComputeNode do
 
   defmodule State do
     defstruct node_id: nil,
+              node_num: nil,
               now_model: %Model{},
               future_model: %Model{},
               receive_model: nil, #TODO: あとで dict 化 or queue 化
@@ -25,12 +26,14 @@ defmodule MiniD3fl.ComputeNode do
   defmodule InitArgs do
     @moduledoc """
     - node_id: nil,
+    - node_num: nil,
     - model: %Model{},
     - data: nil,
     - availability: nil,
     - data_folder: nil
     """
     defstruct node_id: nil,
+              node_num: nil,
               model: %Model{},
               data: nil,
               availability: nil,
@@ -84,6 +87,7 @@ defmodule MiniD3fl.ComputeNode do
   def init(
     %InitArgs{
       node_id: node_id,
+      node_num: node_num,
       model: model,
       data: data,
       availability: avail,
@@ -99,6 +103,7 @@ defmodule MiniD3fl.ComputeNode do
     {:ok,
     %State{
       node_id: node_id,
+      node_num: node_num,
       now_model: model,
       future_model: nil,
       data: data,
@@ -174,10 +179,17 @@ defmodule MiniD3fl.ComputeNode do
   def handle_call({:train,
                     _args},
                   _from,
-                  %State{node_id: node_id, in_train: _in_train, now_model: now_model_state, data_path: _file_path} = state) do
+                  %State{
+                    node_id: node_id,
+                    node_num: node_num,
+                    in_train: _in_train,
+                    now_model: now_model_state,
+                    data_path: _file_path
+                    } = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
-    #TODO: if in_train == false do
-    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state)
+    #TODO: if in_train == false の条件を入れる？
+    sample_rate = 0.3 #TODO: 再考する
+    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state, node_id, node_num, sample_rate)
     new_model = %Model{size: now_model_state.size, plain_model: new_model_state_data}
     train_results = metrix
 
