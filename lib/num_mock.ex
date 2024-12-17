@@ -1,7 +1,7 @@
 defmodule NumMock do
   use MiniD3fl.Aliases
 
-  def prepare_data_directory!(node_counts) do
+  def prepare_data_directory!(node_counts, name) do
     data_directory_path =
       Application.get_env(:mini_d3fl, :data_directory_path) ||
         raise """
@@ -10,19 +10,19 @@ defmodule NumMock do
         """
 
     dt_string = Data.datetime_to_string(DateTime.utc_now())
-    directory_name = "date_#{dt_string}_CalculatorNodeNum_#{node_counts}"
+    directory_name = "date_#{dt_string}_#{name}_CalculatorNodeNum_#{node_counts}"
     data_directory_path = Path.join(data_directory_path, directory_name)
 
     File.mkdir_p!(data_directory_path)
     data_directory_path
   end
 
-  def measure(node_num) do
+  def measure(node_num, name \\ :mnist) when is_atom(name) do
     start = System.monotonic_time(:second)
-    data_directory_path = prepare_data_directory!(node_num)
+    data_directory_path = prepare_data_directory!(node_num, name)
     # Mockのスタート
 
-    inner_start(data_directory_path, node_num)
+    inner_start(data_directory_path, node_num, name)
 
 
     last_time = System.monotonic_time(:second)
@@ -33,8 +33,8 @@ defmodule NumMock do
     File.close fp
   end
 
-  def inner_start(data_directory_path, node_num) do
-    %{job_controller_id: job_controller_id, queue: queue} = setup_num(node_num, data_directory_path)
+  def inner_start(data_directory_path, node_num, name) do
+    %{job_controller_id: job_controller_id, queue: queue} = setup_num(node_num, data_directory_path, name)
     job_executor_id = 0
     JobExecutor.start_link(%JobExcInitArgs{
       job_executor_id: job_executor_id,
@@ -45,7 +45,7 @@ defmodule NumMock do
     sample_rate = 0.01
     DataLoader.start_link(
         %DataLoader.DataLoaderInitArgs{
-          data_name: :mnist,
+          data_name: name,
           client_num: node_num,
           sample_rate: sample_rate}
         )
@@ -53,12 +53,12 @@ defmodule NumMock do
     _history = JobExecutor.simulate_execute(0)
   end
 
-  def setup_num(num, data_dir_path) do
-    setup_compute_node(num, num, data_dir_path)
+  def setup_num(num, data_dir_path, name) do
+    setup_compute_node(num, num, data_dir_path, name)
     queue = EventQueue.init_queue()
     queue = for i <- 1..(num-1), reduce: queue do
       acc_queue ->
-        setup_compute_node(i, num, data_dir_path)
+        setup_compute_node(i, num, data_dir_path, name)
         {:ok, _channel_pid} = setup_channel(i, i+1)
         {:ok, _channel_pid} = setup_channel(i+1, i)
         setup_queue_num(acc_queue, i)
@@ -109,13 +109,14 @@ defmodule NumMock do
     queue
   end
 
-  def setup_compute_node(node_id, total_num, data_dir_path) do
+  def setup_compute_node(node_id, total_num, data_dir_path, data_name) do
     args = %InitArgs{node_id: node_id,
                       node_num: total_num,
                       data: nil,
                       availability: true,
                       model: %Model{size: 100, plain_model: nil},
-                      data_folder: data_dir_path
+                      data_folder: data_dir_path,
+                      data_name: data_name
                     }
 
     {:ok, _pid}  = ComputeNode.start_link(args)
