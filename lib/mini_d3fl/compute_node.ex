@@ -11,6 +11,7 @@ defmodule MiniD3fl.ComputeNode do
 
   defmodule State do
     defstruct node_id: nil,
+              node_num: nil,
               now_model: %Model{},
               future_model: %Model{},
               receive_model: nil, #TODO: あとで dict 化 or queue 化
@@ -18,19 +19,22 @@ defmodule MiniD3fl.ComputeNode do
               data: nil,
               in_train: false,
               availability: nil,
-              future_matrix: nil,
-              data_path: nil
+              future_metric: nil,
+              data_path: nil,
+              metric_history: []
   end
 
   defmodule InitArgs do
     @moduledoc """
     - node_id: nil,
+    - node_num: nil,
     - model: %Model{},
     - data: nil,
     - availability: nil,
     - data_folder: nil
     """
     defstruct node_id: nil,
+              node_num: nil,
               model: %Model{},
               data: nil,
               availability: nil,
@@ -84,6 +88,7 @@ defmodule MiniD3fl.ComputeNode do
   def init(
     %InitArgs{
       node_id: node_id,
+      node_num: node_num,
       model: model,
       data: data,
       availability: avail,
@@ -99,6 +104,7 @@ defmodule MiniD3fl.ComputeNode do
     {:ok,
     %State{
       node_id: node_id,
+      node_num: node_num,
       now_model: model,
       future_model: nil,
       data: data,
@@ -171,22 +177,36 @@ defmodule MiniD3fl.ComputeNode do
       )
   end
 
+  def write_metric_history(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:write_metric_history}
+      )
+  end
+
   def handle_call({:train,
                     _args},
                   _from,
-                  %State{node_id: node_id, in_train: _in_train, now_model: now_model_state, data_path: _file_path} = state) do
+                  %State{
+                    node_id: node_id,
+                    node_num: node_num,
+                    in_train: _in_train,
+                    now_model: now_model_state,
+                    data_path: _file_path
+                    } = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
-    #TODO: if in_train == false do
-    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state)
+    #TODO: if in_train == false の条件を入れる？
+    sample_rate = 0.3 #TODO: 再考する
+    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state, node_id, node_num, sample_rate)
     new_model = %Model{size: now_model_state.size, plain_model: new_model_state_data}
     train_results = metrix
 
     # TODO: Trainした時の結果に書き換える
-    {:reply, train_results, %State{state | future_model: new_model, in_train: true, future_matrix: metrix}}
+    {:reply, train_results, %State{state | future_model: new_model, in_train: true, future_metric: metrix}}
   end
 
   def handle_call({:complete_train, time}, _from,
-                  %State{future_model: future_model, in_train: in_train, data_path: file_path, future_matrix: metrix} =state) do
+                  %State{future_model: future_model, in_train: in_train, future_metric: metrix, data_path: file_path} =state) do
     if in_train == false do
       raise "ERROR: complete train when not training!!!"
     end
@@ -239,5 +259,18 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:get_state}, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call({:write_metric_history}, _from, %State{node_id: node_id, data_path: file_path, metric_history: history} = _state) do
+    csv_content =
+      history
+      |> Enum.map(fn {a, b} -> "#{a},#{b}" end)
+      |> Enum.join("\n")
+
+
+    case File.write(file_path, csv_content) do
+      :ok -> IO.puts("ファイルを書き込みました: node#{node_id}")
+      {:error, reason} -> IO.puts("エラー: #{reason}")
+    end
   end
 end

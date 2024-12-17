@@ -6,10 +6,12 @@ defmodule MiniD3fl.ComputeNode.AiCore do
     {:ok, init_arg}
   end
 
-  def run(former_model \\ %{}) do
-    # train and run
-    # sample
-    Mnist.run(former_model)
+  def run(former_model \\ %{}, client_id, client_num, sample_rate) when is_integer(client_id) do
+    Mnist.run(former_model, client_id, client_num, sample_rate)
+  end
+
+  def data_download(:mnist, client_num, sample_rate) do
+    Mnist.data_download(:mnist, client_num, sample_rate)
   end
 
   def aggregate(map_a, %{}, _rate_b) do

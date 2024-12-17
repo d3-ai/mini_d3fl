@@ -42,16 +42,23 @@ defmodule NumMock do
       init_event_queue: queue,
       data_dir_path: data_directory_path
       })
+    sample_rate = 0.01
+    DataLoader.start_link(
+        %DataLoader.DataLoaderInitArgs{
+          data_name: :mnist,
+          client_num: node_num,
+          sample_rate: sample_rate}
+        )
 
     _history = JobExecutor.simulate_execute(0)
   end
 
   def setup_num(num, data_dir_path) do
-    setup_compute_node(num, data_dir_path)
+    setup_compute_node(num, num, data_dir_path)
     queue = EventQueue.init_queue()
     queue = for i <- 1..(num-1), reduce: queue do
       acc_queue ->
-        setup_compute_node(i, data_dir_path)
+        setup_compute_node(i, num, data_dir_path)
         {:ok, _channel_pid} = setup_channel(i, i+1)
         {:ok, _channel_pid} = setup_channel(i+1, i)
         setup_queue_num(acc_queue, i)
@@ -102,8 +109,9 @@ defmodule NumMock do
     queue
   end
 
-  def setup_compute_node(node_id, data_dir_path) do
+  def setup_compute_node(node_id, total_num, data_dir_path) do
     args = %InitArgs{node_id: node_id,
+                      node_num: total_num,
                       data: nil,
                       availability: true,
                       model: %Model{size: 100, plain_model: nil},
