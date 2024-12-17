@@ -44,11 +44,12 @@ defmodule MiniD3fl.JobExecutorTest do
     %{job_controller_id: job_controller_id, queue: queue}
   end
 
-  def setup_compute_node(node_id) do
+  def setup_compute_node(node_id, node_num) do
     args = %InitArgs{node_id: node_id,
                       data: nil,
                       availability: true,
-                      model: %Model{size: 10, plain_model: nil}
+                      model: %Model{size: 10, plain_model: nil},
+                      node_num: node_num
                     }
 
     {:ok, _pid}  = ComputeNode.start_link(args)
@@ -71,20 +72,21 @@ defmodule MiniD3fl.JobExecutorTest do
   end
 
   def setup_rough(bandwidth \\ 100) do
-    setup_compute_node(10)
-    setup_compute_node(20)
+    setup_compute_node(10, 20)
+    setup_compute_node(20, 20)
     {:ok, channel_pid} = setup_channel(bandwidth)
     setup_job_controller(channel_pid)
   end
 
   def setup_precise(bandwidth \\ 1) do
-    setup_compute_node(10)
-    setup_compute_node(20)
+    setup_compute_node(10, 20)
+    setup_compute_node(20, 20)
     {:ok, channel_pid} = setup_channel(bandwidth)
     setup_job_controller_precise(channel_pid)
   end
 
   test "should exec JobExecutor" do
+    GenServer.stop(DataLoader, :normal, :infinity)
     %{job_controller_id: job_controller_id, queue: queue} = setup_rough()
     job_executor_id = 0
     JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue})
@@ -106,9 +108,11 @@ defmodule MiniD3fl.JobExecutorTest do
     GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
     GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
     GenServer.stop(Utils.get_channel_name(10, 20), :normal, :infinity)
+    GenServer.stop(DataLoader, :normal, :infinity)
   end
 
   test "should exec JobExecutor with precise latency" do
+    # GenServer.stop(DataLoader, :normal, :infinity)
     %{job_controller_id: job_controller_id, queue: queue} = setup_precise()
     job_executor_id = 0
     JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue})
@@ -134,5 +138,6 @@ defmodule MiniD3fl.JobExecutorTest do
     GenServer.stop(Utils.get_process_name(ComputeNode, 10), :normal, :infinity)
     GenServer.stop(Utils.get_process_name(ComputeNode, 20), :normal, :infinity)
     GenServer.stop(Utils.get_channel_name(10, 20), :normal, :infinity)
+    GenServer.stop(DataLoader, :normal, :infinity)
   end
 end
