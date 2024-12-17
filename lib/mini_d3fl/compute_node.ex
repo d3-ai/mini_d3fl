@@ -261,7 +261,7 @@ defmodule MiniD3fl.ComputeNode do
     {:reply, state, state}
   end
 
-  def handle_call({:write_metric_history}, _from, %State{node_id: node_id, data_path: file_path, metric_history: history} = state) do
+  def handle_call({:write_metric_history}, _from, %State{node_id: node_id, data_path: file_path, metric_history: history} = _state) do
     csv_content =
       history
       |> Enum.map(fn {a, b} -> "#{a},#{b}" end)
