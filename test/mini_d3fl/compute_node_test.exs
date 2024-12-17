@@ -14,7 +14,8 @@ defmodule MiniD3fl.ComputeNodeTest do
     node_id = 1
     args = %InitArgs{node_id: node_id,
                       data: nil,
-                      availability: true
+                      availability: true,
+                      node_num: 2
                     }
 
     {:ok, _pid}  = ComputeNode.start_link(args)
