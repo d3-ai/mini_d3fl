@@ -85,8 +85,15 @@ defmodule MiniD3fl.JobExecutorTest do
     setup_job_controller_precise(channel_pid)
   end
 
+  def kill_dataloader() do
+    case Process.whereis(DataLoader) do
+      nil -> nil
+      _ -> GenServer.stop(DataLoader, :normal, :infinity)
+    end
+  end
+
   test "should exec JobExecutor" do
-    GenServer.stop(DataLoader, :normal, :infinity)
+    kill_dataloader()
     %{job_controller_id: job_controller_id, queue: queue} = setup_rough()
     job_executor_id = 0
     JobExecutor.start_link(%JobExcInitArgs{job_executor_id: job_executor_id, job_controller_id: job_controller_id, init_event_queue: queue})
@@ -112,6 +119,7 @@ defmodule MiniD3fl.JobExecutorTest do
   end
 
   test "should exec JobExecutor with precise latency" do
+    kill_dataloader()
     # GenServer.stop(DataLoader, :normal, :infinity)
     %{job_controller_id: job_controller_id, queue: queue} = setup_precise()
     job_executor_id = 0
