@@ -19,8 +19,9 @@ defmodule MiniD3fl.ComputeNode do
               data: nil,
               in_train: false,
               availability: nil,
-              future_matrix: nil,
-              data_path: nil
+              future_metric: nil,
+              data_path: nil,
+              metric_history: []
   end
 
   defmodule InitArgs do
@@ -176,6 +177,13 @@ defmodule MiniD3fl.ComputeNode do
       )
   end
 
+  def write_metric_history(node_id) do
+    GenServer.call(
+      Utils.get_process_name(__MODULE__, node_id),
+      {:write_metric_history}
+      )
+  end
+
   def handle_call({:train,
                     _args},
                   _from,
@@ -194,11 +202,11 @@ defmodule MiniD3fl.ComputeNode do
     train_results = metrix
 
     # TODO: Trainした時の結果に書き換える
-    {:reply, train_results, %State{state | future_model: new_model, in_train: true, future_matrix: metrix}}
+    {:reply, train_results, %State{state | future_model: new_model, in_train: true, future_metric: metrix}}
   end
 
   def handle_call({:complete_train, time}, _from,
-                  %State{future_model: future_model, in_train: in_train, data_path: file_path, future_matrix: metrix} =state) do
+                  %State{future_model: future_model, in_train: in_train, future_metric: metrix, data_path: file_path} =state) do
     if in_train == false do
       raise "ERROR: complete train when not training!!!"
     end
@@ -251,5 +259,18 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:get_state}, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call({:write_metric_history}, _from, %State{node_id: node_id, data_path: file_path, metric_history: history} = state) do
+    csv_content =
+      history
+      |> Enum.map(fn {a, b} -> "#{a},#{b}" end)
+      |> Enum.join("\n")
+
+
+    case File.write(file_path, csv_content) do
+      :ok -> IO.puts("ファイルを書き込みました: node#{node_id}")
+      {:error, reason} -> IO.puts("エラー: #{reason}")
+    end
   end
 end

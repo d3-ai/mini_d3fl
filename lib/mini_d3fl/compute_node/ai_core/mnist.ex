@@ -87,7 +87,7 @@ defmodule Mnist do
   end
 
   def run(former_model_state_data \\ %{}, client_id, client_num, sample_rate) do
-    epoch_num = 1
+    epoch_num = 10
 
     case Process.whereis(DataLoader) do
       nil ->
