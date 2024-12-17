@@ -21,7 +21,8 @@ defmodule MiniD3fl.ComputeNode do
               availability: nil,
               future_metric: nil,
               data_path: nil,
-              metric_history: []
+              metric_history: [],
+              data_name: :mnist
   end
 
   defmodule InitArgs do
@@ -38,7 +39,8 @@ defmodule MiniD3fl.ComputeNode do
               model: %Model{},
               data: nil,
               availability: nil,
-              data_folder: nil
+              data_folder: nil,
+              data_name: :mnist
   end
 
   defmodule TrainArgs do
@@ -92,7 +94,8 @@ defmodule MiniD3fl.ComputeNode do
       model: model,
       data: data,
       availability: avail,
-      data_folder: folder
+      data_folder: folder,
+      data_name: data_name
     } = _init_args) do
     IO.puts "New model #{model.size}"
 
@@ -109,7 +112,8 @@ defmodule MiniD3fl.ComputeNode do
       future_model: nil,
       data: data,
       availability: avail,
-      data_path: path
+      data_path: path,
+      data_name: data_name
     }}
   end
 
@@ -192,12 +196,13 @@ defmodule MiniD3fl.ComputeNode do
                     node_num: node_num,
                     in_train: _in_train,
                     now_model: now_model_state,
-                    data_path: _file_path
+                    data_path: _file_path,
+                    data_name: data_name
                     } = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
     #TODO: if in_train == false の条件を入れる？
     sample_rate = 0.3 #TODO: 再考する
-    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state, node_id, node_num, sample_rate)
+    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model_state, data_name, node_id, node_num, sample_rate)
     new_model = %Model{size: now_model_state.size, plain_model: new_model_state_data}
     train_results = metrix
 
