@@ -55,9 +55,15 @@ defmodule MiniD3fl.DataLoader do
                     locals_train: locals_train,
                     locals_valid: locals_valid,
                     global_test: global_test}} = state) do
-
     #TODO: DataLoader(training_data, batch_size=64, shuffle=True)みたいに？
-    {:reply, {Enum.at(locals_train, client_id-1), Enum.at(locals_valid, client_id-1), global_test}, state}
+
+    local_train= Enum.at(locals_train, client_id-1)
+    local_valid = Enum.at(locals_valid, client_id-1)
+
+    trains = Cifar10.shuffle_batch_lists_to_tensors(local_train)
+    valids = Cifar10.shuffle_batch_lists_to_tensors(local_valid)
+
+    {:reply, {trains, valids, global_test}, state}
   end
 
 end

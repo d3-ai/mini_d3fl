@@ -9,15 +9,19 @@ defmodule Mnist do
   @image_side_pixels 28
   @channel_value_max 255
   @label_values Enum.to_list(0..9)
+  @typ :f32
 
   defp transform_images({bin, type, shape}) do
     bin
     |> Nx.from_binary(type)
     |> Nx.reshape({elem(shape, 0), @image_side_pixels**2})
     |> Nx.divide(@channel_value_max)
-    |> Nx.to_batched(@batch_size)
-    # Test split
-    |> Enum.split(1750)
+    |> Nx.to_list()
+    |> Enum.split(1750 * @batch_size)
+  end
+
+  def batched(list) do
+    list |> Nx.tensor(type: @typ) |> Nx.to_batched(@batch_size)
   end
 
   defp transform_labels({bin, type, _}) do
@@ -25,9 +29,8 @@ defmodule Mnist do
     |> Nx.from_binary(type)
     |> Nx.new_axis(-1)
     |> Nx.equal(Nx.tensor(@label_values))
-    |> Nx.to_batched(@batch_size)
-    # Test split
-    |> Enum.split(1750)
+    |> Nx.to_list()
+    |> Enum.split(1750 * @batch_size)
   end
 
   defp build_model(input_shape) do
@@ -37,11 +40,11 @@ defmodule Mnist do
     |> Axon.dense(length(@label_values), activation: :softmax)
   end
 
-  defp train_model(model, train_images, train_labels, epochs) do
+  defp train_model(model, init_state , train_images, train_labels, epochs) do
     model
     |> Axon.Loop.trainer(:categorical_cross_entropy, Polaris.Optimizers.adamw(learning_rate: 0.005))
     |> Axon.Loop.metric(:accuracy, "Accuracy")
-    |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, epochs: epochs, compiler: EXLA)
+    |> Axon.Loop.run(Stream.zip(train_images, train_labels), init_state, epochs: epochs, compiler: EXLA)
   end
 
   defp test_model(model, model_state, test_images, test_labels) do
@@ -56,8 +59,8 @@ defmodule Mnist do
     {all_local_images, global_test_images} = transform_images(images)
     {all_local_labels, global_test_labels} = transform_labels(labels)
 
-    {all_local_images_train, all_local_images_valid} = Enum.split(all_local_images, 1250)
-    {all_local_labels_train, all_local_labels_valid} = Enum.split(all_local_labels, 1250)
+    {all_local_images_train, all_local_images_valid} = Enum.split(all_local_images, 1250*@batch_size)
+    {all_local_labels_train, all_local_labels_valid} = Enum.split(all_local_labels, 1250*@batch_size)
 
     locals_train = client_data_split(all_local_images_train, all_local_labels_train, client_num, sample_rate)
     locals_valid = client_data_split(all_local_images_valid, all_local_labels_valid, client_num, sample_rate)
@@ -65,7 +68,7 @@ defmodule Mnist do
     %MlData{
       locals_train: locals_train,
       locals_valid: locals_valid,
-      global_test: {global_test_images, global_test_labels}
+      global_test: {batched(global_test_images), batched(global_test_labels)}
     }
   end
 
@@ -87,7 +90,7 @@ defmodule Mnist do
   end
 
   def run(former_model_state_data \\ %{}, client_id, client_num, sample_rate) do
-    epoch_num = 10
+    epoch_num = 1
 
     case Process.whereis(DataLoader) do
       nil ->
@@ -118,12 +121,9 @@ defmodule Mnist do
 
     model_state =
       model
-      |> train_model(train_images, train_labels, epoch_num)
+      |> train_model(former_model_state_data,train_images, train_labels, epoch_num)
 
     IO.write("\n\n Testing Model \n\n")
-
-    new_model_state_data = MiniD3fl.ComputeNode.AiCore.aggregate(model_state.data, former_model_state_data, 1)
-
 
     ans = model
     |> test_model(model_state, test_images, test_labels)
@@ -136,6 +136,6 @@ defmodule Mnist do
       }
     } = ans
     accuracy = Nx.to_number(accuracy)
-    {:end_train, new_model_state_data, accuracy}
+    {:end_train, model_state.data, accuracy}
   end
 end

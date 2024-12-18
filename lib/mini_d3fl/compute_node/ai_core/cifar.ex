@@ -9,28 +9,49 @@ defmodule Cifar10 do
   @width 32
   @height 32
   @channels 3
+  @typ :f32
 
-  defp transform_images({bin, type, shape}) do
+  def transform_images({bin, type, shape}) do
     bin
     |> Nx.from_binary(type)
     |> Nx.reshape(shape, names: [:count, :channels, :width, :height])
-    # Move channels to last position to match what conv layer expects
     |> Nx.transpose(axes: [:count, :width, :height, :channels])
     |> Nx.divide(@channel_value_max)
-    |> Nx.to_batched(@batch_size)
-    |> Enum.split(1500)
+    |> Nx.to_list()
+    |> Enum.split(1500 * @batch_size)
   end
 
-  defp transform_labels({bin, type, _}) do
+  @spec shuffle_batch_lists_to_tensors({list(), any()}) :: {any(), any()}
+  def shuffle_batch_lists_to_tensors({list1, list2}) do
+    # AiCore.Utils に移す
+
+    # 1. Generate a list of indices matching the size of list1 (and list2).
+    indices = Enum.to_list(0..(length(list1) - 1))
+
+    # 2. Shuffle the indices randomly.
+    shuffled_indices = Enum.shuffle(indices)
+
+    # 3. Reorder both lists using the shuffled indices.
+    shuffled_batched_list1 = Enum.map(shuffled_indices, &Enum.at(list1, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)
+    shuffled_batched_list2 = Enum.map(shuffled_indices, &Enum.at(list2, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)
+
+    {shuffled_batched_list1 , shuffled_batched_list2}
+  end
+
+  def batched(list) do
+    list |> Nx.tensor(type: @typ) |> Nx.to_batched(@batch_size)
+  end
+
+  def transform_labels({bin, type, _}) do
     bin
     |> Nx.from_binary(type)
     |> Nx.new_axis(-1)
     |> Nx.equal(Nx.tensor(@label_values))
-    |> Nx.to_batched(@batch_size)
-    |> Enum.split(1500)
+    |> Nx.to_list()
+    |> Enum.split(1500 * @batch_size)
   end
 
-  defp build_model(input_shape) do
+  def build_model(input_shape) do
     Axon.input("input", shape: input_shape)
     |> Axon.conv(32, kernel_size: {3, 3}, activation: :relu)
     |> Axon.batch_norm()
@@ -38,17 +59,20 @@ defmodule Cifar10 do
     |> Axon.conv(64, kernel_size: {3, 3}, activation: :relu)
     |> Axon.batch_norm()
     |> Axon.max_pool(kernel_size: {2, 2})
+    |> Axon.conv(128, kernel_size: {3, 3}, activation: :relu)
+    |> Axon.batch_norm()
+    |> Axon.max_pool(kernel_size: {2, 2})
     |> Axon.flatten()
-    |> Axon.dense(64, activation: :relu)
+    |> Axon.dense(128, activation: :relu)
     |> Axon.dropout(rate: 0.5)
     |> Axon.dense(length(@label_values), activation: :softmax)
   end
 
-  defp train_model(model, train_images, train_labels, epochs) do
+  defp train_model(model, init_state, train_images, train_labels, epochs) do
     model
     |> Axon.Loop.trainer(:categorical_cross_entropy, :adam)
     |> Axon.Loop.metric(:accuracy, "Accuracy")
-    |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, epochs: epochs, compiler: EXLA)
+    |> Axon.Loop.run(Stream.zip(train_images, train_labels), init_state, epochs: epochs, compiler: EXLA)
   end
 
   defp test_model(model, model_state, test_images, test_labels) do
@@ -63,8 +87,8 @@ defmodule Cifar10 do
     {all_local_images, global_test_images} = transform_images(images)
     {all_local_labels, global_test_labels} = transform_labels(labels)
 
-    {all_local_images_train, all_local_images_valid} = Enum.split(all_local_images, 1250)
-    {all_local_labels_train, all_local_labels_valid} = Enum.split(all_local_labels, 1250)
+    {all_local_images_train, all_local_images_valid} = Enum.split(all_local_images, 1250*@batch_size)
+    {all_local_labels_train, all_local_labels_valid} = Enum.split(all_local_labels, 1250*@batch_size)
 
     locals_train = client_data_split(all_local_images_train, all_local_labels_train, client_num, sample_rate)
     locals_valid = client_data_split(all_local_images_valid, all_local_labels_valid, client_num, sample_rate)
@@ -72,7 +96,7 @@ defmodule Cifar10 do
     %MlData{
       locals_train: locals_train,
       locals_valid: locals_valid,
-      global_test: {global_test_images, global_test_labels}
+      global_test: {batched(global_test_images), batched(global_test_labels)}
     }
   end
 
@@ -93,8 +117,10 @@ defmodule Cifar10 do
     end)
   end
 
+  @spec run(integer(), any(), any()) ::
+          {:end_train, any(), :infinity | :nan | :neg_infinity | number() | Complex.t()}
   def run(former_model_state_data \\ %{}, client_id, client_num, sample_rate) do
-    epoch_num = 3
+    epoch_num = 1
 
     case Process.whereis(DataLoader) do
       nil ->
@@ -128,9 +154,7 @@ defmodule Cifar10 do
 
     model_state =
       model
-      |> train_model(train_images, train_labels, epoch_num)
-
-    new_model_state_data = MiniD3fl.ComputeNode.AiCore.aggregate(model_state.data, former_model_state_data, 1)
+      |> train_model(former_model_state_data, train_images, train_labels, epoch_num)
 
     IO.write("\n\n Testing Model \n\n")
 
@@ -145,6 +169,6 @@ defmodule Cifar10 do
       }
     } = ans
     accuracy = Nx.to_number(accuracy)
-    {:end_train, new_model_state_data, accuracy}
+    {:end_train, model_state.data, accuracy}
   end
 end
