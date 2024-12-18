@@ -55,7 +55,7 @@ defmodule NumMock do
 
   def setup_num(num, data_dir_path, name) do
     setup_compute_node(num, num, data_dir_path, name)
-    queue = EventQueue.init_queue()
+    queue = setup_queue_last(EventQueue.init_queue(), num)
     queue = for i <- 1..(num-1), reduce: queue do
       acc_queue ->
         setup_compute_node(i, num, data_dir_path, name)
@@ -72,6 +72,22 @@ defmodule NumMock do
     %{job_controller_id: job_controller_id, queue: queue}
   end
 
+  def setup_queue_last(queue, node_id) do
+    queue = Enum.reduce(0..10, queue, fn count, acc_queue ->
+      acc_queue
+      |> EventQueue.insert_command(%Event{
+        time: 5 + 20 * count,
+        event_name: :train,
+        args: %TrainArgs{node_id: node_id}
+      })
+      |> EventQueue.insert_command(%Event{
+        time: 15 + 20 * count,
+        event_name: :train,
+        args: %TrainArgs{node_id: node_id}
+      })
+    end)
+    queue
+  end
 
   def setup_queue_num(queue, node_id) do
     # コマンドを挿入
@@ -127,7 +143,7 @@ defmodule NumMock do
     # Channelの初期設定
 
     input_qos = %Channel.QoS{bandwidth: bandwidth,
-                      packetloss: 0,
+                      packetloss: 1,
                       capacity: 100}
 
     init_args = %Channel.ChannelArgs{
