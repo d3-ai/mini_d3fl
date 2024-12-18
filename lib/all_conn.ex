@@ -38,13 +38,14 @@ defmodule AllConn do
   end
 
   def setup_num(num, data_dir_path, name) do
-    setup_compute_node(num, num, data_dir_path, name)
-    queue = setup_queue_last(EventQueue.init_queue(), num)
-    queue = for i <- 1..(num-1), reduce: queue do
+    queue = EventQueue.init_queue()
+    queue = for i <- 1..num, reduce: queue do
       acc_queue ->
         setup_compute_node(i, num, data_dir_path, name)
-        for j <- 1..(num-1) do
-          {:ok, _channel_pid} = setup_channel(i, j)
+        for j <- 1..num do
+          if i != j do
+            {:ok, _channel_pid} = setup_channel(i, j)
+          end
         end
         setup_queue_num(acc_queue, i, num)
     end
@@ -57,23 +58,6 @@ defmodule AllConn do
     %{job_controller_id: job_controller_id, queue: queue}
   end
 
-  def setup_queue_last(queue, node_id) do
-    queue = Enum.reduce(0..10, queue, fn count, acc_queue ->
-      acc_queue
-      |> EventQueue.insert_command(%Event{
-        time: 5 + 20 * count,
-        event_name: :train,
-        args: %TrainArgs{node_id: node_id}
-      })
-      |> EventQueue.insert_command(%Event{
-        time: 15 + 20 * count,
-        event_name: :train,
-        args: %TrainArgs{node_id: node_id}
-      })
-    end)
-    queue
-  end
-
   def setup_queue_num(queue, node_id, node_num) do
     # コマンドを挿入
     queue = Enum.reduce(0..10, queue, fn count, acc_queue ->
@@ -82,15 +66,6 @@ defmodule AllConn do
         time: 5 + 20 * count,
         event_name: :train,
         args: %TrainArgs{node_id: node_id}
-      })
-      |> EventQueue.insert_command(%Event{
-        time: 10 + 20 * count,
-        event_name: :send,
-        args: %SendArgs{
-          from_node_id: node_id,
-          to_node_id: node_id + 1,
-          time: 10 + 20 * count
-        }
       })
       |> EventQueue.insert_command(%Event{
         time: 15 + 20 * count,
