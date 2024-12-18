@@ -143,7 +143,7 @@ defmodule NumMock do
     # Channelの初期設定
 
     input_qos = %Channel.QoS{bandwidth: bandwidth,
-                      packetloss: 1,
+                      packetloss: 0,
                       capacity: 10000}
 
     init_args = %Channel.ChannelArgs{
