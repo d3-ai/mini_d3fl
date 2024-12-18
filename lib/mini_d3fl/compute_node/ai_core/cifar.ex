@@ -51,7 +51,7 @@ defmodule Cifar10 do
     |> Enum.split(1500 * @batch_size)
   end
 
-  defp build_model(input_shape) do
+  def build_model(input_shape) do
     Axon.input("input", shape: input_shape)
     |> Axon.conv(32, kernel_size: {3, 3}, activation: :relu)
     |> Axon.batch_norm()
@@ -59,17 +59,20 @@ defmodule Cifar10 do
     |> Axon.conv(64, kernel_size: {3, 3}, activation: :relu)
     |> Axon.batch_norm()
     |> Axon.max_pool(kernel_size: {2, 2})
+    |> Axon.conv(128, kernel_size: {3, 3}, activation: :relu)
+    |> Axon.batch_norm()
+    |> Axon.max_pool(kernel_size: {2, 2})
     |> Axon.flatten()
-    |> Axon.dense(64, activation: :relu)
+    |> Axon.dense(128, activation: :relu)
     |> Axon.dropout(rate: 0.5)
     |> Axon.dense(length(@label_values), activation: :softmax)
   end
 
-  defp train_model(model, train_images, train_labels, epochs) do
+  defp train_model(model, init_state, train_images, train_labels, epochs) do
     model
     |> Axon.Loop.trainer(:categorical_cross_entropy, :adam)
     |> Axon.Loop.metric(:accuracy, "Accuracy")
-    |> Axon.Loop.run(Stream.zip(train_images, train_labels), %{}, epochs: epochs, compiler: EXLA)
+    |> Axon.Loop.run(Stream.zip(train_images, train_labels), init_state, epochs: epochs, compiler: EXLA)
   end
 
   defp test_model(model, model_state, test_images, test_labels) do
@@ -114,8 +117,10 @@ defmodule Cifar10 do
     end)
   end
 
+  @spec run(integer(), any(), any()) ::
+          {:end_train, any(), :infinity | :nan | :neg_infinity | number() | Complex.t()}
   def run(former_model_state_data \\ %{}, client_id, client_num, sample_rate) do
-    epoch_num = 10
+    epoch_num = 1
 
     case Process.whereis(DataLoader) do
       nil ->
@@ -149,9 +154,7 @@ defmodule Cifar10 do
 
     model_state =
       model
-      |> train_model(train_images, train_labels, epoch_num)
-
-    new_model_state_data = MiniD3fl.ComputeNode.AiCore.aggregate(model_state.data, former_model_state_data, 1)
+      |> train_model(former_model_state_data, train_images, train_labels, epoch_num)
 
     IO.write("\n\n Testing Model \n\n")
 
@@ -166,6 +169,6 @@ defmodule Cifar10 do
       }
     } = ans
     accuracy = Nx.to_number(accuracy)
-    {:end_train, new_model_state_data, accuracy}
+    {:end_train, model_state.data, accuracy}
   end
 end

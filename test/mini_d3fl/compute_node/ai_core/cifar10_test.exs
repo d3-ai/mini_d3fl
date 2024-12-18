@@ -11,6 +11,14 @@ defmodule MiniD3fl.ComputeNode.AiCore.MnistTest do
     IO.inspect all_local_images
   end
 
+  test "should build model" do
+    width = 32
+    height = 32
+    channels = 3
+    {nil, width, height, channels}
+      |> Cifar10.build_model()
+  end
+
   @tag timeout: :infinity
   test "should download data" do
     Cifar10.data_download(:cifar10, 2, 0.3)

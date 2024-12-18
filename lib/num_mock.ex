@@ -130,7 +130,7 @@ defmodule NumMock do
                       node_num: total_num,
                       data: nil,
                       availability: true,
-                      model: %Model{size: 100, plain_model: nil},
+                      model: %Model{size: 100, plain_model: %{}},
                       data_folder: data_dir_path,
                       data_name: data_name
                     }
