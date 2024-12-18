@@ -45,6 +45,8 @@ defmodule AllConn do
         for j <- 1..num do
           if i != j do
             {:ok, _channel_pid} = setup_channel(i, j)
+          else
+            setup_channel(i, i, 1)
           end
         end
         setup_queue_num(acc_queue, i, num)
@@ -58,10 +60,22 @@ defmodule AllConn do
     %{job_controller_id: job_controller_id, queue: queue}
   end
 
-  def setup_queue_num(queue, node_id, node_num) do
+  @spec setup_queue_num(any(), any(), any()) :: any()
+  def setup_queue_num(queue, node_id, node_num, recur_num \\ 10) do
     # コマンドを挿入
-    queue = Enum.reduce(0..10, queue, fn count, acc_queue ->
-      acc_queue
+    queue = Enum.reduce(0..(recur_num-1), queue, fn count, acc_queue ->
+      Enum.reduce(1..node_num, acc_queue, fn i, inner_queue ->
+        inner_queue
+        |> EventQueue.insert_command(%Event{
+          time: 10 + 20 * count,
+          event_name: :send,
+          args: %SendArgs{
+            from_node_id: node_id,
+            to_node_id: i,
+            time: 10 + 20 * count
+          }
+        })
+      end)
       |> EventQueue.insert_command(%Event{
         time: 5 + 20 * count,
         event_name: :train,
@@ -71,15 +85,6 @@ defmodule AllConn do
         time: 15 + 20 * count,
         event_name: :train,
         args: %TrainArgs{node_id: node_id}
-      })
-      |> EventQueue.insert_command(%Event{
-        time: 20 + 20 * count,
-        event_name: :send,
-        args: %SendArgs{
-          from_node_id: node_id + 1,
-          to_node_id: node_id,
-          time: 20 + 20 * count
-        }
       })
     end)
     queue
@@ -99,11 +104,11 @@ defmodule AllConn do
     %{node_id: node_id}
   end
 
-  def setup_channel(from_id, to_id, bandwidth \\ 100) do
+  def setup_channel(from_id, to_id, packetloss \\ 0, bandwidth \\ 100) do
     # Channelの初期設定
 
     input_qos = %Channel.QoS{bandwidth: bandwidth,
-                      packetloss: 0,
+                      packetloss: packetloss,
                       capacity: 10000}
 
     init_args = %Channel.ChannelArgs{
