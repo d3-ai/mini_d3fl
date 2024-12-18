@@ -9,25 +9,46 @@ defmodule Cifar10 do
   @width 32
   @height 32
   @channels 3
+  @typ :f32
 
-  defp transform_images({bin, type, shape}) do
+  def transform_images({bin, type, shape}) do
     bin
     |> Nx.from_binary(type)
     |> Nx.reshape(shape, names: [:count, :channels, :width, :height])
-    # Move channels to last position to match what conv layer expects
     |> Nx.transpose(axes: [:count, :width, :height, :channels])
     |> Nx.divide(@channel_value_max)
-    |> Nx.to_batched(@batch_size)
-    |> Enum.split(1500)
+    |> Nx.to_list()
+    |> Enum.split(1500 * @batch_size)
   end
 
-  defp transform_labels({bin, type, _}) do
+  @spec shuffle_batch_lists_to_tensors({list(), any()}) :: {any(), any()}
+  def shuffle_batch_lists_to_tensors({list1, list2}) do
+    # AiCore.Utils に移す
+
+    # 1. Generate a list of indices matching the size of list1 (and list2).
+    indices = Enum.to_list(0..(length(list1) - 1))
+
+    # 2. Shuffle the indices randomly.
+    shuffled_indices = Enum.shuffle(indices)
+
+    # 3. Reorder both lists using the shuffled indices.
+    shuffled_batched_list1 = Enum.map(shuffled_indices, &Enum.at(list1, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)
+    shuffled_batched_list2 = Enum.map(shuffled_indices, &Enum.at(list2, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)
+
+    {shuffled_batched_list1 , shuffled_batched_list2}
+  end
+
+  def batched(list) do
+    list |> Nx.tensor(type: @typ) |> Nx.to_batched(@batch_size)
+  end
+
+  def transform_labels({bin, type, _}) do
     bin
     |> Nx.from_binary(type)
     |> Nx.new_axis(-1)
     |> Nx.equal(Nx.tensor(@label_values))
-    |> Nx.to_batched(@batch_size)
-    |> Enum.split(1500)
+    |> Nx.to_list()
+    |> Enum.split(1500 * @batch_size)
   end
 
   defp build_model(input_shape) do
@@ -63,8 +84,8 @@ defmodule Cifar10 do
     {all_local_images, global_test_images} = transform_images(images)
     {all_local_labels, global_test_labels} = transform_labels(labels)
 
-    {all_local_images_train, all_local_images_valid} = Enum.split(all_local_images, 1250)
-    {all_local_labels_train, all_local_labels_valid} = Enum.split(all_local_labels, 1250)
+    {all_local_images_train, all_local_images_valid} = Enum.split(all_local_images, 1250*@batch_size)
+    {all_local_labels_train, all_local_labels_valid} = Enum.split(all_local_labels, 1250*@batch_size)
 
     locals_train = client_data_split(all_local_images_train, all_local_labels_train, client_num, sample_rate)
     locals_valid = client_data_split(all_local_images_valid, all_local_labels_valid, client_num, sample_rate)
@@ -72,7 +93,7 @@ defmodule Cifar10 do
     %MlData{
       locals_train: locals_train,
       locals_valid: locals_valid,
-      global_test: {global_test_images, global_test_labels}
+      global_test: {batched(global_test_images), batched(global_test_labels)}
     }
   end
 
@@ -94,7 +115,7 @@ defmodule Cifar10 do
   end
 
   def run(former_model_state_data \\ %{}, client_id, client_num, sample_rate) do
-    epoch_num = 3
+    epoch_num = 10
 
     case Process.whereis(DataLoader) do
       nil ->

@@ -42,7 +42,7 @@ defmodule NumMock do
       init_event_queue: queue,
       data_dir_path: data_directory_path
       })
-    sample_rate = 0.01
+    sample_rate = 0.3
     DataLoader.start_link(
         %DataLoader.DataLoaderInitArgs{
           data_name: name,
@@ -144,7 +144,7 @@ defmodule NumMock do
 
     input_qos = %Channel.QoS{bandwidth: bandwidth,
                       packetloss: 1,
-                      capacity: 100}
+                      capacity: 10000}
 
     init_args = %Channel.ChannelArgs{
                   from_cn_id: from_id,
