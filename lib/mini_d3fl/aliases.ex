@@ -1,6 +1,7 @@
 defmodule MiniD3fl.Aliases do
   defmacro __using__(_) do
     quote do
+      alias FedAvg
       alias MiniD3fl.ComputeNode
       alias MiniD3fl.ComputeNode.{Model, InitArgs, TrainArgs, SendArgs, RecvArgs, RenewModelArgs}
       alias MiniD3fl.Channel
