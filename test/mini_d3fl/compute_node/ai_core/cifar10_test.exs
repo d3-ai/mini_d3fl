@@ -1,4 +1,4 @@
-defmodule MiniD3fl.ComputeNode.AiCore.MnistTest do
+defmodule MiniD3fl.ComputeNode.AiCore.Cifar10Test do
   use ExUnit.Case
   use MiniD3fl.Aliases
 
