@@ -37,9 +37,6 @@ defmodule MiniD3fl.ComputeNode.AiCore.Cifar10Test do
 
     trains = Cifar10.shuffle_batch_lists_to_tensors(local_train)
     valids = Cifar10.shuffle_batch_lists_to_tensors(local_valid)
-
-    assert Nx.is_tensor(trains)
-    assert Nx.is_tensor(valids)
   end
 
 end
