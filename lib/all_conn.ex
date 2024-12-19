@@ -3,7 +3,7 @@ defmodule AllConn do
 
   def measure(node_num, name \\ :mnist) when is_atom(name) do
     start = System.monotonic_time(:second)
-    data_directory_path = MockHelper.prepare_data_directory!(node_num, name)
+    data_directory_path = MockHelper.prepare_data_directory!(node_num, name, "All_Conn")
     # Mockのスタート
 
     inner_start(data_directory_path, node_num, name)

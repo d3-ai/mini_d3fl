@@ -10,7 +10,7 @@ defmodule NumMock do
         """
 
     dt_string = Data.datetime_to_string(DateTime.utc_now())
-    directory_name = "date_#{dt_string}_#{name}_CalculatorNodeNum_#{node_counts}"
+    directory_name = "NumMock_date_#{dt_string}_#{name}_CN_Num_#{node_counts}"
     data_directory_path = Path.join(data_directory_path, directory_name)
 
     File.mkdir_p!(data_directory_path)
