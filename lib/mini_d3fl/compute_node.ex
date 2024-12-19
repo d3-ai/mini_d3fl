@@ -1,6 +1,7 @@
 defmodule MiniD3fl.ComputeNode do
   require Logger
   use GenServer
+  alias MiniD3fl.ComputeNode.AiCore
   alias MiniD3fl.Utils
   alias MiniD3fl.Channel
 
@@ -14,7 +15,7 @@ defmodule MiniD3fl.ComputeNode do
               node_num: nil,
               now_model: %Model{},
               future_model: %Model{},
-              receive_model: nil, #TODO: あとで dict 化 or queue 化
+              receive_model_list: [],
               train_duration: 4, #TODO: あとで、CNごとに変化させる
               data: nil,
               in_train: false,
@@ -36,7 +37,7 @@ defmodule MiniD3fl.ComputeNode do
     """
     defstruct node_id: nil,
               node_num: nil,
-              model: %Model{},
+              model: %Model{size: nil, plain_model: %{}},
               data: nil,
               availability: nil,
               data_folder: nil,
@@ -194,6 +195,7 @@ defmodule MiniD3fl.ComputeNode do
                   %State{
                     node_id: node_id,
                     node_num: node_num,
+                    receive_model_list: model_list,
                     in_train: _in_train,
                     now_model: now_model,
                     data_path: _file_path,
@@ -201,13 +203,21 @@ defmodule MiniD3fl.ComputeNode do
                     } = state) do
     IO.puts "Node id: #{node_id} in TRAIN"
     #TODO: if in_train == false の条件を入れる？
+
+    #TODO: 再考する　aggregation のタイミングや回数
+    aggregated_model = AiCore.aggregate(:fedavg, model_list ++ [now_model.plain_model])
+
     sample_rate = 0.3 #TODO: 再考する
-    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(now_model.plain_model, data_name, node_id, node_num, sample_rate)
+    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(aggregated_model, data_name, node_id, node_num, sample_rate)
     new_model = %Model{size: now_model.size, plain_model: new_model_state_data}
     train_results = metrix
 
     # TODO: Trainした時の結果に書き換える
-    {:reply, train_results, %State{state | future_model: new_model, in_train: true, future_metric: metrix}}
+    {:reply, train_results,
+    %State{state | future_model: new_model,
+                    in_train: true,
+                    future_metric: metrix,
+                    receive_model_list: []}}
   end
 
   def handle_call({:complete_train, time}, _from,
@@ -241,8 +251,8 @@ defmodule MiniD3fl.ComputeNode do
 
   def handle_call({:recv_model, %RecvArgs{model: model}},
                   _from,
-                  state) do
-    {:reply, :ok, %State{state | receive_model: model}}
+                  %State{receive_model_list: list} = state) do
+    {:reply, :ok, %State{state | receive_model_list: list ++ [model.plain_model]}}
     #TODO: もらってきたモデルはどこに置くか？ receive_modelを作った。後ほどdict化する？
   end
 

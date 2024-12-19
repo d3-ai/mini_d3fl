@@ -28,6 +28,7 @@ defmodule MiniD3fl.ComputeNodeTest do
 
   def cn_setup(node_id) do
     args = %InitArgs{node_id: node_id,
+                      node_num: 20,
                       data: nil,
                       availability: true
                     }
@@ -74,8 +75,8 @@ defmodule MiniD3fl.ComputeNodeTest do
     :ok = Channel.recv_model_at_channel(fid, tid, model1, 10)
     :ok = Channel.send_model_from_channel(fid, tid, 20)
 
-    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
-    assert recv_model == model1
+    %ComputeNode.State{receive_model_list: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == [model1.plain_model]
 
     %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     empty_queue =  {[], []}
@@ -126,8 +127,8 @@ defmodule MiniD3fl.ComputeNodeTest do
 
     :ok = Channel.send_model_from_channel(fid, tid, 20)
 
-    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
-    assert recv_model == nil
+    %ComputeNode.State{receive_model_list: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == []
 
     %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     empty_queue =  {[], []}
@@ -181,8 +182,8 @@ defmodule MiniD3fl.ComputeNodeTest do
     # model1 の送受信
 
     :ok = Channel.send_model_from_channel(fid, tid, 30)
-    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
-    assert recv_model == model1
+    %ComputeNode.State{receive_model_list: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == [model1.plain_model]
 
     %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     one_queue =  {[], [model2]}
@@ -192,8 +193,8 @@ defmodule MiniD3fl.ComputeNodeTest do
     # model2 の送受信
 
     :ok = Channel.send_model_from_channel(fid, tid, 40)
-    %ComputeNode.State{receive_model: recv_model} = ComputeNode.get_state(20)
-    assert recv_model == model2
+    %ComputeNode.State{receive_model_list: recv_model} = ComputeNode.get_state(20)
+    assert recv_model == [model1.plain_model, model2.plain_model]
 
     %Channel.State{queue: queue, model_sum_size: model_sum_size} = Channel.get_state(fid, tid)
     empty_queue =  {[], []}

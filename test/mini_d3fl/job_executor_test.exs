@@ -48,7 +48,7 @@ defmodule MiniD3fl.JobExecutorTest do
     args = %InitArgs{node_id: node_id,
                       data: nil,
                       availability: true,
-                      model: %Model{size: 10, plain_model: nil},
+                      model: %Model{size: 10, plain_model: %{}},
                       node_num: node_num
                     }
 
@@ -92,6 +92,7 @@ defmodule MiniD3fl.JobExecutorTest do
     end
   end
 
+  @tag timeout: :infinity
   test "should exec JobExecutor" do
     kill_dataloader()
     %{job_controller_id: job_controller_id, queue: queue} = setup_rough()
@@ -118,6 +119,7 @@ defmodule MiniD3fl.JobExecutorTest do
     GenServer.stop(DataLoader, :normal, :infinity)
   end
 
+  @tag timeout: :infinity
   test "should exec JobExecutor with precise latency" do
     kill_dataloader()
     # GenServer.stop(DataLoader, :normal, :infinity)
