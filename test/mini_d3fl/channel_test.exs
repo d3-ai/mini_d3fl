@@ -133,4 +133,28 @@ defmodule MiniD3fl.ChannelTest do
     assert sum/rep >= num - num/10
   end
 
+  test "should change channel params" do
+    input_qos = %QoS{bandwidth: 100,
+                      packetloss: 0,
+                      capacity: 100}
+    fid = 100
+    tid = 200
+    init_args = %ChannelArgs{
+                  from_cn_id: fid,
+                  to_cn_id: tid,
+                  QoS: input_qos}
+
+    {:ok, _channel_pid} = Channel.start_link(init_args)
+
+    Channel.change_channel_params(%ChannelArgs{init_args | QoS: %Channel.QoS{packetloss: 1}})
+    state = Channel.get_state(fid, tid)
+    IO.inspect state
+
+    %Channel.State{QoS: qos} = state
+    IO.inspect qos
+
+    %Channel.QoS{packetloss: pkl} = qos
+    assert pkl == 1
+  end
+
 end
