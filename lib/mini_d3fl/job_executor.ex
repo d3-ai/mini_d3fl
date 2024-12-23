@@ -23,6 +23,7 @@ defmodule MiniD3fl.JobExecutor do
     - job_controller_id: int
     - event_queue: JobController.EventQueue
     """
+    #TODO: init_event_queueはいらない！！！！
     defstruct [:job_executor_id, :job_controller_id, :init_event_queue, :data_dir_path]
   end
 
@@ -128,6 +129,10 @@ defmodule MiniD3fl.JobExecutor do
 
       %Event{event_name: :unavailable, args: node_id} ->
         ComputeNode.become_unavailable(node_id)
+
+      %Event{event_name: :change_channel_params, args: %Channel.ChannelArgs{} = args} ->
+        IO.puts "++++++++++++++ change channel params ++++++++++++++"
+        Channel.change_channel_params(args)
      end
   end
 end

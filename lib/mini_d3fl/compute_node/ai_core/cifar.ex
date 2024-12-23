@@ -35,6 +35,8 @@ defmodule Cifar10 do
     shuffled_batched_list1 = Enum.map(shuffled_indices, &Enum.at(list1, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)
     shuffled_batched_list2 = Enum.map(shuffled_indices, &Enum.at(list2, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)
 
+    # TODO: おそらく、&Enum.at(list2, &1)) |> Nx.tensor(type: @typ)|> Nx.to_batched(@batch_size)が遅い？
+
     {shuffled_batched_list1 , shuffled_batched_list2}
   end
 
@@ -137,6 +139,7 @@ defmodule Cifar10 do
         nil
     end
 
+    # ここからIO.write("\n\n Training Model \n\n")までに何か律速な処理がある？
     {
       {train_images, train_labels},
       {_valid_images, _valid_labels},

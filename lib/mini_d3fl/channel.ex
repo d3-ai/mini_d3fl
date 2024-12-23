@@ -23,6 +23,11 @@ defmodule MiniD3fl.Channel do
   end
 
   defmodule ChannelArgs do
+    @moduledoc """
+    from_cn_id: int,
+    to_cn_id: int,
+    QoS: %QoS{}
+    """
     defstruct from_cn_id: nil,
               to_cn_id: nil,
               QoS: %QoS{}
@@ -55,6 +60,20 @@ defmodule MiniD3fl.Channel do
     }
   end
 
+  def change_channel_params(%ChannelArgs{from_cn_id: fid, to_cn_id: tid} = args) do
+    case Process.whereis(Utils.get_channel_name(fid, tid)) do
+      nil ->
+        IO.puts "new channel from #{fid} to #{tid}"
+        MiniD3fl.Channel.start_link(args)
+
+      _ ->
+        GenServer.call(
+          Utils.get_channel_name(fid, tid),
+          {:change_channel_params, args}
+        )
+    end
+  end
+
   def recv_model_at_channel(from_id, to_id, model, now_time) do
     GenServer.call(
       Utils.get_channel_name(from_id, to_id),
@@ -76,6 +95,13 @@ defmodule MiniD3fl.Channel do
       {:get_state})
   end
 
+  def handle_call({:change_channel_params, %ChannelArgs{QoS: qos} = _args},
+                  _from,
+                  state) do
+    IO.puts "change channel params"
+    {:reply, :ok, %State{state | QoS: qos}}
+  end
+
   def handle_call({:recv_model_at_channel, now_time,
                     %Model{size: model_size, plain_model: _plain_model} = model},
                   _from,
@@ -95,6 +121,7 @@ defmodule MiniD3fl.Channel do
         IO.puts "At Channel #{channel_id} : model over rest of capacity"
         {:reply, {:warning, "over_the_limit"}, state}
       is_loss_packet(packetloss) ->
+        IO.puts "At Channel from #{from_cn_id} to #{to_cn_id}: packet loss"
         {:reply, {:warning, "paket loss"}, state}
       true ->
         {recv_time, new_sent_time} = case sent_time do
