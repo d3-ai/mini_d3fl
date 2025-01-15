@@ -52,13 +52,13 @@ defmodule AllConnAvail do
         setup_queue_num(acc_queue, i, num)
     end
 
-    queue = Enum.reduce(div(num,2)..num, queue, fn node_id, acc_queue ->
+    queue = Enum.reduce(4..num, queue, fn node_id, acc_queue ->
       acc_queue |> EventQueue.insert_command(%Event{
         time: 0,
         event_name: :unavailable,
         args: node_id})
         |> EventQueue.insert_command(%Event{
-          time: 80,
+          time: node_id * 20,
           event_name: :available,
           args: node_id})
     end)

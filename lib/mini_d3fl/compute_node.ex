@@ -199,25 +199,30 @@ defmodule MiniD3fl.ComputeNode do
                     in_train: _in_train,
                     now_model: now_model,
                     data_path: _file_path,
-                    data_name: data_name
+                    data_name: data_name,
+                    availability: avail
                     } = state) do
-    IO.puts "Node id: #{node_id} in TRAIN"
-    #TODO: if in_train == false の条件を入れる？
+    if avail do
+      IO.puts "Node id: #{node_id} in TRAIN"
+      #TODO: if in_train == false の条件を入れる？
 
-    #TODO: 再考する　aggregation のタイミングや回数
-    aggregated_model = AiCore.aggregate(:fedavg, model_list ++ [now_model.plain_model])
+      #TODO: 再考する　aggregation のタイミングや回数
+      aggregated_model = AiCore.aggregate(:fedavg, model_list ++ [now_model.plain_model])
 
-    sample_rate = 0.3 #TODO: 再考する
-    {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(aggregated_model, data_name, node_id, node_num, sample_rate)
-    new_model = %Model{size: now_model.size, plain_model: new_model_state_data}
-    train_results = metrix
+      sample_rate = 0.3 #TODO: 再考する
+      {:end_train, new_model_state_data, metrix} = MiniD3fl.ComputeNode.AiCore.run(aggregated_model, data_name, node_id, node_num, sample_rate)
+      new_model = %Model{size: now_model.size, plain_model: new_model_state_data}
+      train_results = metrix
 
-    # TODO: Trainした時の結果に書き換える
-    {:reply, train_results,
-    %State{state | future_model: new_model,
-                    in_train: true,
-                    future_metric: metrix,
-                    receive_model_list: []}}
+      # TODO: Trainした時の結果に書き換える
+      {:reply, train_results,
+      %State{state | future_model: new_model,
+                      in_train: true,
+                      future_metric: metrix,
+                      receive_model_list: []}}
+    else
+      {:reply, nil, state}
+    end
   end
 
   def handle_call({:complete_train, time}, _from,
@@ -242,17 +247,22 @@ defmodule MiniD3fl.ComputeNode do
                       time: time
                     }} = _send_args,
                     _from,
-                    %State{now_model: now_model} = state) do
+                    %State{now_model: now_model,
+                            availability: avail} = state) do
 
     #TODO: Channel.recv_model_at_channel/3
-    Channel.recv_model_at_channel(from_node_id, to_node_id, now_model, time)
+
+    if avail do
+      Channel.recv_model_at_channel(from_node_id, to_node_id, now_model, time)
+    end
     {:reply, :ok, state}
   end
 
   def handle_call({:recv_model, %RecvArgs{model: model}},
                   _from,
-                  %State{receive_model_list: list} = state) do
-    {:reply, :ok, %State{state | receive_model_list: list ++ [model.plain_model]}}
+                  %State{receive_model_list: list,
+                          availability: avail} = state) do
+    {:reply, :ok, %State{state | receive_model_list: (if avail, do: list ++ [model.plain_model], else: list)}}
     #TODO: もらってきたモデルはどこに置くか？ receive_modelを作った。後ほどdict化する？
   end
 

@@ -97,14 +97,19 @@ defmodule MiniD3fl.JobExecutor do
   def event_execute(job_controller_id, event) do
     case event do
       %Event{time: time, event_name: :train, args: %TrainArgs{node_id: node_id} = args} ->
-        ComputeNode.train(args)
-        # train終了のイベントを入れる
-        train_duration = ComputeNode.get_train_duration(node_id)
-        end_time = time + train_duration
-        event = %Event{time: end_time, event_name: :complete_train, args: node_id}
-        add_event(job_controller_id, event)
+        reply = ComputeNode.train(args)
 
-        IO.puts "time #{time}: train @node_#{node_id}"
+        if reply != nil do
+          # train終了のイベントを入れる
+          train_duration = ComputeNode.get_train_duration(node_id)
+          end_time = time + train_duration
+          event = %Event{time: end_time, event_name: :complete_train, args: node_id}
+          add_event(job_controller_id, event)
+
+          IO.puts "time #{time}: train @node_#{node_id}"
+        else
+          IO.puts "time #{time}: Not train @node_#{node_id} due to availability"
+        end
 
       %Event{time: time, event_name: :send, args: %ComputeNode.SendArgs{from_node_id: from_id, to_node_id: to_id} = args} ->
         ComputeNode.send_to_channel(args)
