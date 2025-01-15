@@ -23,7 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Call Setup Swap Workflow
-      uses: ./.github/actions/setup-swap
+      uses: ./.github/actions/add-swap
       with:
         swap_size: 8
     - name: Set up Elixir
