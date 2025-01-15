@@ -1,0 +1,22 @@
+name: Setup Swap Space
+
+on:
+  workflow_call:  # 他のワークフローから呼び出し可能にする
+    inputs:
+      swap_size:
+        description: "Swap size in GB"
+        required: false
+        default: 4
+
+jobs:
+  setup-swap:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Add Swap Space
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l ${ { inputs.swap_size } }G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          swapon --show  # スワップ領域の確認
