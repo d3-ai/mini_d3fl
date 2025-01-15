@@ -10,22 +10,27 @@ runs:
   using: "composite"
   steps:
     - name: Disable existing swap
+      shell: bash
       run: |
         sudo swapoff -a
 
     - name: Allocate swap file
+      shell: bash
       run: |
         sudo fallocate -l ${{ inputs.swap_size }}G /swapfile
         sudo chmod 600 /swapfile
 
     - name: Format swap file
+      shell: bash
       run: |
         sudo mkswap /swapfile
 
     - name: Enable swap
+      shell: bash
       run: |
         sudo swapon /swapfile
 
     - name: Show swap details
+      shell: bash
       run: |
         swapon --show
