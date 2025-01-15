@@ -1,0 +1,31 @@
+name: "Add Swap Space"
+description: "Sets up swap space on the runner."
+inputs:
+  swap_size:
+    description: "Size of the swap file in GB"
+    required: false
+    default: 4  # デフォルトで4GBのスワップファイルを作成
+
+runs:
+  using: "composite"
+  steps:
+    - name: Disable existing swap
+      run: |
+        sudo swapoff -a
+
+    - name: Allocate swap file
+      run: |
+        sudo fallocate -l ${{ inputs.swap_size }}G /swapfile
+        sudo chmod 600 /swapfile
+
+    - name: Format swap file
+      run: |
+        sudo mkswap /swapfile
+
+    - name: Enable swap
+      run: |
+        sudo swapon /swapfile
+
+    - name: Show swap details
+      run: |
+        swapon --show
