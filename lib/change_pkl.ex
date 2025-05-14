@@ -69,6 +69,19 @@ defmodule ChangePkl do
             }
           }
         })
+        |> EventQueue.insert_command(%Event{
+          time: 180,
+          event_name: :change_channel_params,
+          args: %ChannelArgs{
+            from_cn_id: from,
+            to_cn_id: to,
+            QoS: %QoS{
+              bandwidth: 100,
+              packetloss: 1,
+              capacity: 10000
+            }
+          }
+        })
       end)
     end )
     job_controller_id = 0
